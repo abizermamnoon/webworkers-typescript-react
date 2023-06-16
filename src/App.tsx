@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Loader from "./components/Loader";
 import Pagination from "./components/Pagination";
 import Table from "./components/Table";
+import Line from "./components/LineChart";
 import { processList } from "./longProcesses/enums";
 
 type LengthCountType = {
@@ -10,17 +11,29 @@ type LengthCountType = {
 };
 
 export type ProfileType = {
-  albumId: number | string;
-  id: number | string;
-  title: string;
-  url: string;
-  thumbnailUrl: string;
+  primary_type: string;
+  location: string;
+  Arrest: number,
+  Domestic: number,
+  Beat: number,
+  Year: number,
+  Latitude: number,
+  Longitude: number,
+  date: string,
+  time: string,
+  number: number,
+  district: number,
+  area: number,
+  code: number,
+  value: number,
+  index: number,
 };
 
 export type ProfileListType = {
   loading: boolean;
   list: unknown & Array<ProfileType>;
   page: number;
+  // totalPages: number;
 };
 
 export type GetDataType = {
@@ -29,7 +42,7 @@ export type GetDataType = {
   thePageNumber: number;
 };
 
-export const listPageSize = 50;
+export const listPageSize = 10000;
 
 const App = () => {
   const counter: Worker = useMemo(
@@ -49,6 +62,7 @@ const App = () => {
     loading: true,
     list: [],
     page: 1,
+    // totalPages: 0,
   });
 
   const handlePageNumber = (userSelectedPage: number) => {
@@ -149,18 +163,20 @@ const App = () => {
           <Loader size={40} display="block" />
         ) : (
           <>
-            <Table list={profileList.list} />
-            <Pagination
+            <Line list={profileList.list} />
+            {/* <Pagination
               page={profileList.page}
-              pages={lengthCount.value / listPageSize}
+              pages=  {Math.ceil(lengthCount.value / listPageSize)} // {lengthCount.value / listPageSize} 
+              
               pageClick={(pageNumber) => {
                 handlePageNumber(pageNumber);
               }}
+              
               prevHandler={() => prevHandler(profileList.page)}
-              nextHandler={() =>
-                nextHandler(profileList.page, lengthCount.value / listPageSize)
-              }
+              nextHandler={() => nextHandler(profileList.page, Math.ceil(lengthCount.value / listPageSize))}
+
             />
+            {console.log('pages:', lengthCount.value / listPageSize)} */}
           </>
         )}
       </section>

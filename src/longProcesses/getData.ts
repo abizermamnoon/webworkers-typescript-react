@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import { GetDataType, listPageSize, ProfileListType } from "../App";
-import { profiles } from "../data";
+// import { profiles } from "../data";
+import axios from "axios";
 import { processList } from "./enums";
 
 self.onmessage = (e: MessageEvent<string>) => {
@@ -10,15 +11,27 @@ self.onmessage = (e: MessageEvent<string>) => {
     return;
   }
   if (data.period === "initial") {
-    const items = profiles.filter((item, index) => index < listPageSize);
+    axios
+      .get("http://localhost:5000")  //, { params: { page: data.thePageNumber } })
+      .then((response) => {
+        const items = response.data;
+        console.log("List:", items); // Print the list
 
-    const response = {
-      loading: false,
-      list: items,
-      page: data.thePageNumber,
-    } as ProfileListType;
+        // const totalPages = Math.ceil(items.length / listPageSize);
 
-    self.postMessage(JSON.stringify(response));
+        const profileList: ProfileListType = {
+          loading: false,
+          list: items, // getItemsForPage(items, data.thePageNumber),
+          page: data.thePageNumber,
+          // totalPages: totalPages,
+        };
+
+        self.postMessage(JSON.stringify(profileList));
+      })
+      .catch((error) => {
+        console.error(error);
+        self.postMessage(JSON.stringify({ loading: false, list: [], page: 1 }));
+      });
   }
 
   if (
@@ -26,18 +39,35 @@ self.onmessage = (e: MessageEvent<string>) => {
     data.period === "next" ||
     data.period === "prev"
   ) {
-    const items = profiles.slice(
-      (data.thePageNumber - 1) * listPageSize,
-      data.thePageNumber * listPageSize
-    );
-    const response = {
-      loading: false,
-      list: items,
-      page: data.thePageNumber,
-    } as ProfileListType;
+    axios
+      .get("http://localhost:5000", { params: { page: data.thePageNumber } })
+      .then((response) => {
+        // console.log("File is compressed:", response.headers["content-encoding"]);
+        const items = response.data;
 
-    self.postMessage(JSON.stringify(response));
+        // const nextPageNumber =
+        //   data.period === "next" ? data.thePageNumber + 1 : data.thePageNumber - 1;
+
+        const profileList: ProfileListType = {
+          loading: false,
+          list: items, // getItemsForPage(items, nextPageNumber),
+          page: data.thePageNumber,// nextPageNumber,
+          //totalPages: Math.ceil(items.length / listPageSize),
+        };
+
+        self.postMessage(JSON.stringify(profileList));
+      })
+      .catch((error) => {
+        console.error(error);
+        self.postMessage(JSON.stringify({ loading: false, list: [], page: 1 }));
+      });
   }
 };
+
+// function getItemsForPage(items: any[], pageNumber: number): any[] {
+//   const startIndex = (pageNumber - 1) * listPageSize;
+//   const endIndex = startIndex + listPageSize;
+//   return items.slice(startIndex, endIndex);
+// }
 
 export {};

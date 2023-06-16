@@ -1,12 +1,21 @@
 /* eslint-disable no-restricted-globals */
-import { profiles } from "../data";
+// import { profiles } from "../data";
 import { processList } from "./enums";
+import axios from 'axios';
+import React, { useEffect, useState } from "react";
 
 self.onmessage = (e: MessageEvent<string>) => {
   if (e.data === processList.count) {
-    const findLength = profiles.length;
-
-    self.postMessage(findLength);
+    // Fetch data from the backend
+    axios.get("http://localhost:5000") // Replace with your backend API endpoint
+      .then(response => {
+        const ordersData = response.data;
+        const findLength = ordersData.length;
+        self.postMessage(findLength);
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }
 };
 

@@ -10,3 +10,22 @@ export enum ProfileEnum {
   url = "Url",
   thumbnailUrl = "Thumbnail",
 }
+
+export enum CrimeEnum {
+  primary_type = "Primary Type",
+  location = "Location",
+  Arrest = "Arrest",
+  Domestic = "Domestic",
+  Beat = "Beat",
+  Year = "Year",
+  Latitude = "Latitude",
+  Longitude = "Longitude",
+  date = "Date",
+  time = "Time",
+  number = "Number",
+  district = "District",
+  area = "Area",
+  code = "Code",
+  value = "Value",
+  index = "Index"
+}

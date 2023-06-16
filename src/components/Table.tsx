@@ -1,42 +1,61 @@
 import React from "react";
 import { ProfileType } from "../App";
-import { ProfileEnum } from "../longProcesses/enums";
+import { CrimeEnum } from "../longProcesses/enums";
 
 type Props = {
   list: Array<ProfileType>;
 };
 
 const Table = ({ list }: Props) => {
+  console.log("list:", list);
   return (
     <div className="table">
       <table>
         <thead>
           <tr>
             <th>#</th>
-            <th>{ProfileEnum.id}</th>
-            <th>{ProfileEnum.title}</th>
-            <th>{ProfileEnum.albumId}</th>
-            <th>{ProfileEnum.thumbnailUrl}</th>
+            <th>{CrimeEnum.primary_type}</th>
+            <th>{CrimeEnum.location}</th>
+            <th>{CrimeEnum.Arrest}</th>
+            <th>{CrimeEnum.Domestic}</th>
+            <th>{CrimeEnum.Beat}</th>
+            <th>{CrimeEnum.Year}</th>
+            <th>{CrimeEnum.Latitude}</th>
+            <th>{CrimeEnum.Longitude}</th>
+            <th>{CrimeEnum.date}</th>
+            <th>{CrimeEnum.time}</th>
+            <th>{CrimeEnum.number}</th>
+            <th>{CrimeEnum.district}</th>
+            <th>{CrimeEnum.area}</th>
+            <th>{CrimeEnum.code}</th>
+            <th>{CrimeEnum.value}</th>
+            <th>{CrimeEnum.index}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody>          
           {list.length > 0 &&
             list.map((item, index: number) => {
               return (
-                <tr key={item?.id}>
+                <tr key={item?.index}>
                   <td>{index + 1}</td>
-                  <td>{item?.id}</td>
-                  <td>{item?.title}</td>
-                  <td>{item?.albumId}</td>
-                  <td>
-                    <img
-                      src={item?.thumbnailUrl}
-                      alt={item?.title}
-                      width={50}
-                      height={50}
-                      loading="lazy"
-                    />
-                  </td>
+                  <td>{item?.primary_type}</td>
+                  <td>{item?.location}</td>
+                  <td>{item?.Arrest}</td>
+                  <td>{item?.Domestic}</td>
+                  <td>{item?.Beat}</td>
+                  <td>{item?.Year}</td>
+                  <td>{item?.Latitude}</td>
+                  <td>{item?.Longitude}</td>
+                  <td>{item?.date}</td>
+                  <td>{item?.time}</td>
+                  <td>{item?.number}</td>
+                  <td>{item?.district}</td>
+                  <td>{item?.area}</td>
+                  <td>{item?.code}</td>
+                  <td>{item?.value}</td>
+                  <td>{item?.index}</td>
+
+                  
                 </tr>
               );
             })}
