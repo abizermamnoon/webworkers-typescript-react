@@ -23,10 +23,11 @@ const LineChart = ({ list }) => {
   const [showxAxis, setShowxAxis] = useState(false);
   const [xAxisType, setXAxisType] = useState("");
   const [hideControls, setHideControls] = useState(false);
-  const [sortedData, setSortedData] = useState([]);
+  const [sortedData, setSortedData] = useState({});
   const [seriesCount, setSeriesCount] = useState(1);
   const [showLegend, setShowLegend] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState([]);
+  const [groupEnabled, setGroupEnabled] = useState(false);
 
   useEffect(() => {
     const ordersData = list;
@@ -42,45 +43,154 @@ const LineChart = ({ list }) => {
   }, [list]);
 
   useEffect(() => {
-    sortData(data, xAxisParam);
-  }, [data, xAxisParam]);
+    sortData(data, xAxisParam, yAxisParams);
+  }, [data, xAxisParam, yAxisParams]);
 
-  const sortData = (data, xAxisParam) => {
+  const sortData = (data, xAxisParam, yAxisParams) => {
+    if (!yAxisParams || yAxisParams.length === 0) {
+      return; // Exit early if yAxisParams is undefined or empty
+    }
+    if (type === "pie") {
+      const groupedData = {};
+    data.forEach((entry, index) => {
+      const groupKey = entry[yAxisParams];
+  
+      if (!groupedData[groupKey]) {
+        groupedData[groupKey] = {};
+        yAxisParams.forEach(yAxisParam => {
+          groupedData[groupKey][yAxisParam] = 0;
+        });
+      }
+  
+      yAxisParams.forEach(yAxisParam => {
+        groupedData[groupKey][yAxisParam] += 1;
+      });
+    });
+  
+    const sorted = Object.entries(groupedData).sort((a, b) => a[0] - b[0]);
+    const xAxisData = sorted.map(([key]) => key);
+    const yAxisData = sorted.map(([key, value]) => {
+      const data = [];
+  
+      yAxisParams.forEach((yAxisParam, index) => {
+        data.push(value[yAxisParam]);
+      });
+  
+      return data;
+    });
+  
+    setSortedData({ xAxisData, yAxisData });
+  }
+    else if (groupEnabled) {
+    const groupedData = {};
+    data.forEach(entry => {
+      const groupKey = entry[xAxisParam];
+  
+      if (!groupedData[groupKey]) {
+        groupedData[groupKey] = {};
+        yAxisParams.forEach(yAxisParam => {
+          groupedData[groupKey][yAxisParam] = 0;
+        });
+      }
+  
+      yAxisParams.forEach(yAxisParam => {
+        groupedData[groupKey][yAxisParam] += entry[yAxisParam];
+      });
+    });
+  
+    const sorted = Object.entries(groupedData).sort((a, b) => a[0] - b[0]);
+    const xAxisData = sorted.map(([key]) => key);
+    const yAxisData = sorted.map(([key, value]) => {
+      const data = [];
+  
+      yAxisParams.forEach(yAxisParam => {
+        data.push(value[yAxisParam]);
+      });
+  
+      return data;
+    });
+  
+    setSortedData({ xAxisData, yAxisData });
+  } else{
     const sorted = data
       .filter((entry, index) => index % 10 === 0)
       .sort((a, b) => a[xAxisParam] - b[xAxisParam]);
-    setSortedData(sorted);
+      const xAxisData = sorted.map((entry) => entry[xAxisParam]);
+      const yAxisData = sorted.map((entry) => {
+        const data = [];
+    
+        yAxisParams.forEach(yAxisParam => {
+          data.push(entry[yAxisParam]);
+        });
+    
+        return data;
+      });
+    
+      setSortedData({ xAxisData, yAxisData });
+  }
   };
 
+  useEffect(() => {
+    console.log('sorted data:', sortedData);
+  }, [sortedData]);
+
   const getOptions = () => {
-    const xAxisData = sortedData.map((entry) => entry[xAxisParam]);
-    const series = [];
-    const legendData = [];
-
-    for (let i = 0; i < seriesCount; i++) {
-      const yAxisParam = yAxisParams[i];
-      const yAxisData = sortedData.map((entry) => entry[yAxisParam]);
-
-      series.push({
-        name: yAxisParam,
-        data: yAxisData,
-        type: type,
-        smooth: smooth[0] || false,
-        stack: stack,
-        areaStyle: {
-          opacity: areaStyle ? 0.7 : 0,
-        },
-      });
-      legendData.push(yAxisParam);
+    if (!sortedData || !sortedData.yAxisData) {
+      return {}; // Exit early if sortedData or yAxisParams is not available
     }
-
+  
+    const xAxisData = sortedData.xAxisData;
+    const yAxisData = sortedData.yAxisData;
+  
+    let series = [];
+    let legendData = [];
+  
+    if (type === "pie") {
+      series = [
+        {
+          name: "Group Size",
+          data: yAxisData.map((data, index) => ({
+            name: xAxisData[index],
+            value: data.reduce((acc, value) => acc + value, 0),
+          })),
+          type: "pie",
+          radius: "50%", // Set the radius of the pie chart
+          label: {
+            show: false
+          },
+        },
+      ];
+    } else {
+      yAxisParams.forEach((yAxisParam, i) => {
+        series.push({
+          name: yAxisParam,
+          data: yAxisData.map((data) => data[i]),
+          type: type,
+          smooth: smooth[0] || false,
+          stack: stack,
+          areaStyle: {
+            opacity: areaStyle ? 0.7 : 0,
+          },
+        });
+        legendData.push(yAxisParam);
+      });
+    }
+  
     return {
       title: {
         text: title,
       },
+      legend: {
+        show: true
+      },
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b} : {c} ({d}%)'
+      },
       xAxis: {
-        type: xAxisType || "category",
-        data: xAxisData,
+        show: type === "pie" ? false : true,
+        type: "category",
+        data: type === "pie" ? [] : xAxisData,
         axisTick: {
           show: true,
         },
@@ -97,7 +207,6 @@ const LineChart = ({ list }) => {
             yAxisIndex: "none",
           },
           restore: {},
-          saveAsImage: {},
         },
       },
       series: series,
@@ -232,6 +341,16 @@ const LineChart = ({ list }) => {
         )}
       </div>
 
+      <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
+        <label htmlFor="groupCheckbox">Group by:</label>
+        <input
+          id="groupCheckbox"
+          type="checkbox"
+          checked={groupEnabled}
+          onChange={(e) => setGroupEnabled(e.target.checked)}
+        />
+      </div>
+
       <div className="box-chart">
         {Array.from({ length: seriesCount }, (_, index) => index).map(
           (index) => (
@@ -309,7 +428,7 @@ const LineChart = ({ list }) => {
       </div>
 
       <div className="box-chart">
-        <ReactEcharts option={getOptions()} style={{ height: "400px" }} />
+        <ReactEcharts option={getOptions()} style={{ height: "400px", width: "1000px" }} />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { processList } from "./enums";
 import axios from 'axios';
 import React, { useEffect, useState } from "react";
 
-self.onmessage = (e: MessageEvent<string>) => {
+self.onmessage = (e) => {
   if (e.data === processList.count) {
     // Fetch data from the backend
     axios.get("http://localhost:5000") // Replace with your backend API endpoint

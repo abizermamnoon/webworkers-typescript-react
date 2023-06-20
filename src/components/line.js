@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ReactEcharts from "echarts-for-react"
-import { ProfileType } from "../App";
+// import { ProfileType } from "../App";
 // import { CrimeEnum } from "../longProcesses/enums";
 // import "./styles.css"
 
-type Props = {
-    list: Array<ProfileType>;
-  };
-
-const Line = ({ list }: Props) => {
+const Line = ({ list }) => {
 
     const option = {
     toolbox: {
