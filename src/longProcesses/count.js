@@ -2,7 +2,6 @@
 // import { profiles } from "../data";
 import { processList } from "./enums";
 import axios from 'axios';
-import React, { useEffect, useState } from "react";
 
 self.onmessage = (e) => {
   if (e.data === processList.count) {

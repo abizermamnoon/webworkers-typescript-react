@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import ReactEcharts from "echarts-for-react"
 import { ProfileType } from "../App";
 // import { CrimeEnum } from "../longProcesses/enums";
 import "./styles.css"
+import Loader from "./Loader";
 
 // type Props = {
 //     list: Array<ProfileType>;
@@ -28,6 +29,8 @@ const LineChart = ({ list }) => {
   const [showLegend, setShowLegend] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState([]);
   const [groupEnabled, setGroupEnabled] = useState(false);
+  const [generateChart, setGenerateChart] = useState(false);
+  const [shouldSortData, setShouldSortData] = useState(false);
 
   useEffect(() => {
     const ordersData = list;
@@ -42,93 +45,38 @@ const LineChart = ({ list }) => {
     }
   }, [list]);
 
-  useEffect(() => {
-    sortData(data, xAxisParam, yAxisParams);
-  }, [data, xAxisParam, yAxisParams]);
+  const dataProcessor = useMemo(
+    () => new Worker(new URL("../longProcesses/dataProcessor.js", import.meta.url)),
+    []
+  );
 
-  const sortData = (data, xAxisParam, yAxisParams) => {
-    if (!yAxisParams || yAxisParams.length === 0) {
-      return; // Exit early if yAxisParams is undefined or empty
+  useEffect(() => {
+    if (shouldSortData) {
+      sortData(data, xAxisParam, yAxisParams, groupEnabled, type);
+      setShouldSortData(false); // Reset the shouldSortData state after sorting
     }
-    if (type === "pie") {
-      const groupedData = {};
-    data.forEach((entry, index) => {
-      const groupKey = entry[yAxisParams];
+  }, [shouldSortData, data, xAxisParam, yAxisParams, groupEnabled, type]);
+
+  const sortData = useCallback(
+    (data, xAxisParam, yAxisParams, groupEnabled, type) => {
+      dataProcessor.postMessage({
+        action: "sortData",
+        data: { data, xAxisParam, yAxisParams, groupEnabled, type },
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    dataProcessor.onmessage = (e) => {
+      const { action, data } = e.data;
   
-      if (!groupedData[groupKey]) {
-        groupedData[groupKey] = {};
-        yAxisParams.forEach(yAxisParam => {
-          groupedData[groupKey][yAxisParam] = 0;
-        });
+      if (action === "dataSorted") {
+        
+        setSortedData(data);
       }
-  
-      yAxisParams.forEach(yAxisParam => {
-        groupedData[groupKey][yAxisParam] += 1;
-      });
-    });
-  
-    const sorted = Object.entries(groupedData).sort((a, b) => a[0] - b[0]);
-    const xAxisData = sorted.map(([key]) => key);
-    const yAxisData = sorted.map(([key, value]) => {
-      const data = [];
-  
-      yAxisParams.forEach((yAxisParam, index) => {
-        data.push(value[yAxisParam]);
-      });
-  
-      return data;
-    });
-  
-    setSortedData({ xAxisData, yAxisData });
-  }
-    else if (groupEnabled) {
-    const groupedData = {};
-    data.forEach(entry => {
-      const groupKey = entry[xAxisParam];
-  
-      if (!groupedData[groupKey]) {
-        groupedData[groupKey] = {};
-        yAxisParams.forEach(yAxisParam => {
-          groupedData[groupKey][yAxisParam] = 0;
-        });
-      }
-  
-      yAxisParams.forEach(yAxisParam => {
-        groupedData[groupKey][yAxisParam] += entry[yAxisParam];
-      });
-    });
-  
-    const sorted = Object.entries(groupedData).sort((a, b) => a[0] - b[0]);
-    const xAxisData = sorted.map(([key]) => key);
-    const yAxisData = sorted.map(([key, value]) => {
-      const data = [];
-  
-      yAxisParams.forEach(yAxisParam => {
-        data.push(value[yAxisParam]);
-      });
-  
-      return data;
-    });
-  
-    setSortedData({ xAxisData, yAxisData });
-  } else{
-    const sorted = data
-      .filter((entry, index) => index % 10 === 0)
-      .sort((a, b) => a[xAxisParam] - b[xAxisParam]);
-      const xAxisData = sorted.map((entry) => entry[xAxisParam]);
-      const yAxisData = sorted.map((entry) => {
-        const data = [];
-    
-        yAxisParams.forEach(yAxisParam => {
-          data.push(entry[yAxisParam]);
-        });
-    
-        return data;
-      });
-    
-      setSortedData({ xAxisData, yAxisData });
-  }
-  };
+    };
+  }, []);
 
   useEffect(() => {
     console.log('sorted data:', sortedData);
@@ -171,6 +119,11 @@ const LineChart = ({ list }) => {
           areaStyle: {
             opacity: areaStyle ? 0.7 : 0,
           },
+          emphasis: {
+            disabled: true
+          },
+          silent: true,
+          animation: false,
         });
         legendData.push(yAxisParam);
       });
@@ -184,10 +137,13 @@ const LineChart = ({ list }) => {
         show: true
       },
       tooltip: {
-        trigger: 'item',
+        show: type === "pie" ? true : false,
+        trigger: type === "pie" ? 'item' : 'none',
         formatter: '{a} <br/>{b} : {c} ({d}%)'
       },
       xAxis: {
+        silent: true,
+        triggerEvent: false,
         show: type === "pie" ? false : true,
         type: "category",
         data: type === "pie" ? [] : xAxisData,
@@ -196,6 +152,7 @@ const LineChart = ({ list }) => {
         },
       },
       yAxis: {
+        silent: true,
         type: "value",
       },
       toolbox: {
@@ -231,6 +188,11 @@ const LineChart = ({ list }) => {
 
   const handleHideControls = () => {
     setHideControls(true);
+  };
+
+  const handleGenerateChart = () => {
+    setGenerateChart(true);
+    setShouldSortData(true); // Set generateChart state to true when the button is clicked
   };
 
   const handleUnhideControls = () => {
@@ -427,8 +389,14 @@ const LineChart = ({ list }) => {
         )}
       </div>
 
+      <div>
+      <button onClick={handleGenerateChart}>Generate Chart</button> {/* Add Generate Chart button */}
+      </div>
+
       <div className="box-chart">
+      {generateChart && ( // Render the chart only when generateChart is true
         <ReactEcharts option={getOptions()} style={{ height: "400px", width: "1000px" }} />
+      )}
       </div>
     </div>
   );
