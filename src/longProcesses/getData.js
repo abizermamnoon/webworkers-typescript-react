@@ -13,9 +13,9 @@ self.onmessage = (e) => {
     axios
       .get("http://localhost:5000")
       .then((response) => {
-        console.log("Response received:", response);
-        const items = response.data
-        console.log("List:", items); // Print the list
+        // console.log("Response received:", response);
+        const items = response.data.slice(0, 10);
+        // console.log("List:", items); // Print the list
 
       const profileList = {
         loading: false,

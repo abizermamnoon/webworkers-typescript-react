@@ -78,6 +78,10 @@ const App = () => {
           page: response.page,
         }));
       };
+      return () => {
+        counter.terminate();
+        getData.terminate();
+      };
     }
   }, [data, profileList.page]);
 

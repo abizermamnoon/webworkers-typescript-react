@@ -31,7 +31,9 @@ const LineChart = ({ list }) => {
   const [groupEnabled, setGroupEnabled] = useState(false);
   const [generateChart, setGenerateChart] = useState(false);
   const [shouldSortData, setShouldSortData] = useState(false);
-
+  const [loading, setLoading] = useState(false);
+  const TIMEOUT_DURATION = 5 * 60 * 1000;
+  
   useEffect(() => {
     const ordersData = list;
     setData(ordersData);
@@ -45,42 +47,39 @@ const LineChart = ({ list }) => {
     }
   }, [list]);
 
-  const dataProcessor = useMemo(
-    () => new Worker(new URL("../longProcesses/dataProcessor.js", import.meta.url)),
-    []
-  );
-
   useEffect(() => {
     if (shouldSortData) {
-      sortData(data, xAxisParam, yAxisParams, groupEnabled, type);
+      sortData(xAxisParam, yAxisParams, groupEnabled, type);
       setShouldSortData(false); // Reset the shouldSortData state after sorting
+      
     }
-  }, [shouldSortData, data, xAxisParam, yAxisParams, groupEnabled, type]);
+  }, [shouldSortData, xAxisParam, yAxisParams, groupEnabled, type]);
 
-  const sortData = useCallback(
-    (data, xAxisParam, yAxisParams, groupEnabled, type) => {
-      dataProcessor.postMessage({
-        action: "sortData",
-        data: { data, xAxisParam, yAxisParams, groupEnabled, type },
-      });
-    },
-    []
-  );
+  const counter = new Worker(new URL("../longProcesses/sortDataWorker.js", import.meta.url));
 
-  useEffect(() => {
-    dataProcessor.onmessage = (e) => {
-      const { action, data } = e.data;
+  const sortData = useCallback((xAxisParam, yAxisParams, groupEnabled, type) => {
+    counter.postMessage({ xAxisParam, yAxisParams, groupEnabled, type });
   
-      if (action === "dataSorted") {
-        
-        setSortedData(data);
-      }
+    counter.onmessage = (event) => {
+      const sortedData = event.data;
+  
+      setSortedData(sortedData);
     };
   }, []);
 
   useEffect(() => {
     console.log('sorted data:', sortedData);
+  
+    // return () => {
+    //   counter.terminate(); // Terminate the web worker when the component unmounts
+    // };
   }, [sortedData]);
+
+  // useEffect(() => {
+  //   if (generateChart) {
+  //     setGenerateChart(false); // Set generateChart state to false after the chart is generated
+  //   }
+  // }, [generateChart]);
 
   const getOptions = () => {
     if (!sortedData || !sortedData.yAxisData) {
@@ -155,17 +154,6 @@ const LineChart = ({ list }) => {
         silent: true,
         type: "value",
       },
-      toolbox: {
-        feature: {
-          saveAsImage: {
-            type: "canvas",
-          },
-          dataZoom: {
-            yAxisIndex: "none",
-          },
-          restore: {},
-        },
-      },
       series: series,
     };
   };
@@ -194,6 +182,16 @@ const LineChart = ({ list }) => {
     setGenerateChart(true);
     setShouldSortData(true); // Set generateChart state to true when the button is clicked
   };
+
+  useEffect(() => {
+    if (generateChart) {
+      const timeout = setTimeout(() => {
+        setGenerateChart(false);
+      }, TIMEOUT_DURATION);
+  
+      return () => clearTimeout(timeout);
+    }
+  }, [generateChart]);
 
   const handleUnhideControls = () => {
     setHideControls(false);
@@ -394,9 +392,11 @@ const LineChart = ({ list }) => {
       </div>
 
       <div className="box-chart">
-      {generateChart && ( // Render the chart only when generateChart is true
-        <ReactEcharts option={getOptions()} style={{ height: "400px", width: "1000px" }} />
-      )}
+      {(
+          generateChart && ( // Render the chart only when generateChart is true and loading state is false
+            <ReactEcharts option={getOptions()} style={{ height: "400px", width: "1000px" }} />
+          )
+        )}
       </div>
     </div>
   );
