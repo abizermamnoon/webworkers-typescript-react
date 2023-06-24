@@ -1,13 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import ReactEcharts from "echarts-for-react"
-import { ProfileType } from "../App";
-// import { CrimeEnum } from "../longProcesses/enums";
 import "./styles.css"
-import Loader from "./Loader";
-
-// type Props = {
-//     list: Array<ProfileType>;
-//   };
 
 const LineChart = ({ list }) => {
   const [data, setData] = useState(list);
@@ -22,16 +15,12 @@ const LineChart = ({ list }) => {
   const [showSmooth, setShowSmooth] = useState(false);
   const [showStack, setShowStack] = useState(false);
   const [showxAxis, setShowxAxis] = useState(false);
-  const [xAxisType, setXAxisType] = useState("");
   const [hideControls, setHideControls] = useState(false);
   const [sortedData, setSortedData] = useState({});
   const [seriesCount, setSeriesCount] = useState(1);
-  const [showLegend, setShowLegend] = useState(false);
-  const [selectedCharts, setSelectedCharts] = useState([]);
   const [groupEnabled, setGroupEnabled] = useState(false);
   const [generateChart, setGenerateChart] = useState(false);
   const [shouldSortData, setShouldSortData] = useState(false);
-  const [loading, setLoading] = useState(false);
   const TIMEOUT_DURATION = 5 * 60 * 1000;
   
   useEffect(() => {
@@ -74,12 +63,6 @@ const LineChart = ({ list }) => {
     //   counter.terminate(); // Terminate the web worker when the component unmounts
     // };
   }, [sortedData]);
-
-  // useEffect(() => {
-  //   if (generateChart) {
-  //     setGenerateChart(false); // Set generateChart state to false after the chart is generated
-  //   }
-  // }, [generateChart]);
 
   const getOptions = () => {
     if (!sortedData || !sortedData.yAxisData) {
@@ -158,10 +141,6 @@ const LineChart = ({ list }) => {
     };
   };
 
-  useEffect(() => {
-    setShowLegend(yAxisParams.length > 0);
-  }, [yAxisParams]);
-
   const handleXAxisChange = (value) => {
     setXAxisParam(value);
   };
@@ -205,10 +184,6 @@ const LineChart = ({ list }) => {
 
   const handleStackChange = (value) => {
     setStack(value);
-  };
-
-  const handleXAxisType = (e) => {
-    setXAxisType(e.target.value);
   };
 
   const handleAreaStyleChange = (value) => {
