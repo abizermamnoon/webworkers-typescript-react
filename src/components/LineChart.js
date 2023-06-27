@@ -21,6 +21,7 @@ const LineChart = ({ list }) => {
   const [groupEnabled, setGroupEnabled] = useState(false);
   const [generateChart, setGenerateChart] = useState(false);
   const [shouldSortData, setShouldSortData] = useState(false);
+  const [interval, setInterval] = useState("");
   const TIMEOUT_DURATION = 5 * 60 * 1000;
   
   useEffect(() => {
@@ -31,23 +32,24 @@ const LineChart = ({ list }) => {
     if (ordersData.length > 0) {
       const columns = Object.keys(ordersData[0]);
       setColumnOptions(columns);
-      setXAxisParam(""); // Set default x-axis parameter as blank
+      console.log('column:', columns)
+      // setXAxisParam(""); // Set default x-axis parameter as blank
       sortData(ordersData, "");
     }
   }, [list]);
 
   useEffect(() => {
     if (shouldSortData) {
-      sortData(xAxisParam, yAxisParams, groupEnabled, type);
+      sortData(xAxisParam, yAxisParams, groupEnabled, type, interval);
       setShouldSortData(false); // Reset the shouldSortData state after sorting
       
     }
-  }, [shouldSortData, xAxisParam, yAxisParams, groupEnabled, type]);
+  }, [shouldSortData, xAxisParam, yAxisParams, groupEnabled, type, interval]);
 
   const counter = new Worker(new URL("../longProcesses/sortDataWorker.js", import.meta.url));
 
-  const sortData = useCallback((xAxisParam, yAxisParams, groupEnabled, type) => {
-    counter.postMessage({ xAxisParam, yAxisParams, groupEnabled, type });
+  const sortData = useCallback((xAxisParam, yAxisParams, groupEnabled, type, interval) => {
+    counter.postMessage({ xAxisParam, yAxisParams, groupEnabled, type, interval });
   
     counter.onmessage = (event) => {
       const sortedData = event.data;
@@ -58,10 +60,6 @@ const LineChart = ({ list }) => {
 
   useEffect(() => {
     console.log('sorted data:', sortedData);
-  
-    // return () => {
-    //   counter.terminate(); // Terminate the web worker when the component unmounts
-    // };
   }, [sortedData]);
 
   const getOptions = () => {
@@ -78,10 +76,9 @@ const LineChart = ({ list }) => {
     if (type === "pie") {
       series = [
         {
-          name: "Group Size",
           data: yAxisData.map((data, index) => ({
             name: xAxisData[index],
-            value: data.reduce((acc, value) => acc + value, 0),
+            value: yAxisData[index],
           })),
           type: "pie",
           radius: "50%", // Set the radius of the pie chart
@@ -96,6 +93,9 @@ const LineChart = ({ list }) => {
           name: yAxisParam,
           data: yAxisData.map((data) => data[i]),
           type: type,
+          label: {
+            show: true
+          },
           smooth: smooth[0] || false,
           stack: stack,
           areaStyle: {
@@ -162,16 +162,6 @@ const LineChart = ({ list }) => {
     setShouldSortData(true); // Set generateChart state to true when the button is clicked
   };
 
-  useEffect(() => {
-    if (generateChart) {
-      const timeout = setTimeout(() => {
-        setGenerateChart(false);
-      }, TIMEOUT_DURATION);
-  
-      return () => clearTimeout(timeout);
-    }
-  }, [generateChart]);
-
   const handleUnhideControls = () => {
     setHideControls(false);
   };
@@ -184,6 +174,10 @@ const LineChart = ({ list }) => {
 
   const handleStackChange = (value) => {
     setStack(value);
+  };
+
+  const handleIntervalChange = (value) => {
+    setInterval(value);
   };
 
   const handleAreaStyleChange = (value) => {
@@ -277,14 +271,18 @@ const LineChart = ({ list }) => {
       </div>
 
       <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
-        <label htmlFor="groupCheckbox">Group by:</label>
-        <input
-          id="groupCheckbox"
-          type="checkbox"
-          checked={groupEnabled}
-          onChange={(e) => setGroupEnabled(e.target.checked)}
-        />
-      </div>
+      {xAxisParam === "datetime" && (
+        <>
+          <label>Interval:</label>
+          <select value={interval} onChange={(e) => handleIntervalChange(e.target.value)}>
+          <option value=""></option>
+            <option value="daily">Daily</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </>
+      )}
+    </div>
 
       <div className="box-chart">
         {Array.from({ length: seriesCount }, (_, index) => index).map(
