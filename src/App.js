@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import Loader from "./components/Loader";
-import Line from "./components/LineChart";
+import { ControlCenter, Chart } from "./components/ControlCenter";
 import { processList } from "./longProcesses/enums";
 import axios from 'axios';
 
@@ -28,7 +28,7 @@ const App = () => {
     const file = e.target.files[0]
     console.log(file);
     setFile(file)
-}
+  }
 
   const uploadFile = () => {
       const formData = new FormData();
@@ -107,8 +107,8 @@ const App = () => {
           <Loader size={40} display="block" />
         ) : (
           <>
-            <Line list={profileList.list} />
-            
+            <ControlCenter list={profileList.list} />
+            <Chart/>
           </>
         )}
       </section>
@@ -117,3 +117,4 @@ const App = () => {
 };
 
 export default App;
+
