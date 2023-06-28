@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import ReactEcharts from "echarts-for-react"
 import "./styles.css"
+
 const ControlCenter = ({ list }) => {
     const [data, setData] = useState(list);
     const [xAxisParam, setXAxisParam] = useState("");
@@ -9,15 +10,12 @@ const ControlCenter = ({ list }) => {
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
-    const [hideControls, setHideControls] = useState(false);
     const [sortedData, setSortedData] = useState({});
     const [seriesCount, setSeriesCount] = useState(1);
     const [interval, setInterval] = useState("");
     const [chartId, setChartId] = useState(1);
     const [chartIdList, setChartIdList] = useState([1]);
     const [charts, setCharts] = useState([]);
-    // const [generateChart, setGenerateChart] = useState(true);
-    const [shouldSortData, setShouldSortData] = useState(false);
     const [dataProcessed, setDataProcessed] = useState(false);
     useEffect(() => {
         if (list && list.length > 0) {
@@ -33,10 +31,17 @@ const ControlCenter = ({ list }) => {
         }, [list]);
     
     useEffect(() => {   
-      
+      let timeoutId;
+
+      const handleSortData = () => {
         sortData(xAxisParam, yAxisParams, type, interval);
-        
-    }, [shouldSortData, xAxisParam, yAxisParams, type, interval]);
+        clearTimeout(timeoutId);
+      };
+
+      timeoutId = setTimeout(handleSortData, 5000);
+
+      return () => clearTimeout(timeoutId);
+    }, [xAxisParam, yAxisParams, type, interval]);
     
         const counter = new Worker(new URL("../longProcesses/sortDataWorker.js", import.meta.url));
         
@@ -47,10 +52,12 @@ const ControlCenter = ({ list }) => {
             const sortedData = event.data;
         
             setSortedData(sortedData);
-            if (sortedData.yAxisData && yAxisParams.length === sortedData.yAxisData[0].length) {
+            if (type === "pie") {
+              setDataProcessed(true);
+            } else if (sortedData.yAxisData && yAxisParams.length === sortedData.yAxisData[0].length) {
               setDataProcessed(true);
             }
-            };
+          };
         }, []);
   
       const handleXAxisChange = (value) => {
@@ -104,6 +111,7 @@ const ControlCenter = ({ list }) => {
         setTitle("");
         setType("");
         setInterval("");
+        setDataProcessed(false);
       };
 
       const handleTypeChange = (event) => {
