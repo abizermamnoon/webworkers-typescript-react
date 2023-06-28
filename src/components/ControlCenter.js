@@ -18,7 +18,7 @@ const ControlCenter = ({ list }) => {
     const [charts, setCharts] = useState([]);
     // const [generateChart, setGenerateChart] = useState(true);
     const [shouldSortData, setShouldSortData] = useState(false);
-    
+    const [dataProcessed, setDataProcessed] = useState(false);
     useEffect(() => {
         if (list && list.length > 0) {
             const ordersData = list;
@@ -47,6 +47,9 @@ const ControlCenter = ({ list }) => {
             const sortedData = event.data;
         
             setSortedData(sortedData);
+            if (sortedData.yAxisData && yAxisParams.length === sortedData.yAxisData[0].length) {
+              setDataProcessed(true);
+            }
             };
         }, []);
   
@@ -60,14 +63,6 @@ const ControlCenter = ({ list }) => {
           updatedParams[index] = value;
           return updatedParams;
         });
-      };
-    
-      const handleHideControls = () => {
-        setHideControls(true);
-      };
-    
-      const handleUnhideControls = () => {
-        setHideControls(false);
       };
     
       const handleIntervalChange = (value) => {
@@ -130,7 +125,7 @@ const ControlCenter = ({ list }) => {
       return (
         <div className="box-container">
           
-          <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
+          <div className='box-chart'>
             <label htmlFor="type">Chart Type:</label>
             <select
               id="type"
@@ -145,7 +140,7 @@ const ControlCenter = ({ list }) => {
             </select>
           </div>
     
-          <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
+          <div className='box-chart'>
             <label htmlFor="title">Chart Title:</label>
             <input
               id="title"
@@ -155,7 +150,7 @@ const ControlCenter = ({ list }) => {
             />
           </div>
     
-          <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
+          <div className='box-chart'>
             {showxAxis && (
               <>
                 <label htmlFor="xAxisParam">X-Axis:</label>
@@ -173,7 +168,7 @@ const ControlCenter = ({ list }) => {
             )}
           </div>
     
-          <div className={`box-chart ${hideControls ? "hide-controls" : ""}`}>
+          <div className='box-chart'>
           {xAxisParam === "datetime" && (
             <>
               <label>Interval:</label>
@@ -218,14 +213,6 @@ const ControlCenter = ({ list }) => {
             <span>{seriesCount}</span>
             <button onClick={handleAddSeries}>+</button>
           </div>
-    
-          <div>
-            {hideControls ? (
-              <button onClick={handleUnhideControls}>Unhide Controls</button>
-            ) : (
-              <button onClick={handleHideControls}>Hide Controls</button>
-            )}
-          </div>
 
           <div>
             <button onClick={handleChartIdChange}>Add Chart</button>     
@@ -242,6 +229,11 @@ const ControlCenter = ({ list }) => {
             </select>
           </div>
 
+          {dataProcessed && (
+          <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
+            Data processed...
+          </div>
+)}
           {charts.map((chart) => (
           <Chart
             // generateChart={generateChart}
@@ -381,4 +373,5 @@ const Chart = ({
 };
 
 export { ControlCenter, Chart };
+
 
