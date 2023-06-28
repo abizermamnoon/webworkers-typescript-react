@@ -1,9 +1,8 @@
 /* eslint-disable no-restricted-globals */
 self.addEventListener('message', async (event) => {
-    const { xAxisParam, yAxisParams, groupEnabled, type, interval } = event.data;
+    const { xAxisParam, yAxisParams, type, interval } = event.data;
     console.log('xAxisParam:', xAxisParam);
     console.log('yAxisParams:', yAxisParams);
-    console.log('groupEnabled:', groupEnabled);
     console.log('type:', type);
     console.log('interval:', interval);
   
@@ -13,7 +12,7 @@ self.addEventListener('message', async (event) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ xAxisParam, yAxisParams, groupEnabled, type, interval }),
+        body: JSON.stringify({ xAxisParam, yAxisParams, type, interval }),
       });
   
       const sortedData = await response.json();
