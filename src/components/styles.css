@@ -17,17 +17,28 @@ height: 350px;
 }
 
 .box-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    /* height: 400px; */
-    justify-content: flex-end;
-  }
+  display: flex;
+  /* flex-direction: row; Change flex-direction to column */
+  gap: 10px;
+}
+
+.box-container > :first-child {
+  flex: 0 0 30%; /* Set the width of the first child to 30% */
+  height: 100%;
+  
+}
+
+.box-container > :not(:first-child) {
+  flex: 1 1 auto; /* Make the rest of the children have equal-sized portions */
+  flex-direction: column;
+  flex-wrap: wrap;
+  
+}
   
   
 .box-chart {
 width: 100%;
-height: 150px;
+height: 80px;
 gap: 10px;
 }
 
@@ -46,11 +57,12 @@ gap: 10px;
 
 .chart-icon {
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   margin: 1px;
   border-radius: 4px;
   background-color: #e0e0e0;
   color: #333;
+  font-size: 12px;
   transition: background-color 0.3s;
 }
 

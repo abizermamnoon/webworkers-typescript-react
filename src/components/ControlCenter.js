@@ -132,10 +132,8 @@ const ControlCenter = ({ list }) => {
           <input type="checkbox" checked={type === "pie"} onChange={() => handleTypeChange("pie")}/>
             Pie
           </div>
-        </div>
       </div>
     
-          <div className='box-chart'>
             {showxAxis && (
               <>
                 <label htmlFor="xAxisParam">X-Axis:</label>
@@ -149,9 +147,7 @@ const ControlCenter = ({ list }) => {
                 </div>
               </>
             )}
-          </div>
-    
-          <div className='box-chart'>
+          
           {xAxisParam === "datetime" && (
             <>
               <label>Interval:</label>
@@ -171,9 +167,7 @@ const ControlCenter = ({ list }) => {
               </div>
             </>
           )}
-          </div>
-    
-          <div className='box-chart'>   
+          
               <>
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
@@ -185,13 +179,13 @@ const ControlCenter = ({ list }) => {
                   ))}
                 </div>
               </> 
-          </div>
+          
 
-          <div>
+          
             <button onClick={handleChartIdChange}>Add Chart</button>     
-          </div>
+          
 
-          <div>
+          
             <label htmlFor="chartId">Chart ID:</label>
             <select id="chartId">
               {chartIdList.map((id) => (
@@ -200,13 +194,14 @@ const ControlCenter = ({ list }) => {
                 </option>
               ))}
             </select>
-          </div>
+          
 
           {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
             Data processed...
           </div>
 )}
+          </div>
           {charts.map((chart) => (
           <Chart
             // generateChart={generateChart}
