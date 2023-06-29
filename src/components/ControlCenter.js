@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useCallback } from "react";
 import ReactEcharts from "echarts-for-react"
 import "./styles.css"
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const ControlCenter = ({ list }) => {
     const [data, setData] = useState(list);
     const [xAxisParam, setXAxisParam] = useState("");
     const [columnOptions, setColumnOptions] = useState([]);
     const [yAxisParams, setYAxisParams] = useState([]);
-    const [isIconActive, setIsIconActive] = useState([]);
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
@@ -17,6 +21,9 @@ const ControlCenter = ({ list }) => {
     const [chartIdList, setChartIdList] = useState([1]);
     const [charts, setCharts] = useState([]);
     const [dataProcessed, setDataProcessed] = useState(false);
+    const [layouts, setLayouts] = useState({ lg: [] });
+    const chartWidth = 6;
+    const chartHeight = 4;
     useEffect(() => {
         if (list && list.length > 0) {
             const ordersData = list;
@@ -34,11 +41,11 @@ const ControlCenter = ({ list }) => {
       let timeoutId;
 
       const handleSortData = () => {
-        sortData(xAxisParam, yAxisParams, type, interval);
+        sortData(xAxisParam, yAxisParams.filter(param => param !== undefined), type, interval);
         clearTimeout(timeoutId);
       };
 
-      timeoutId = setTimeout(handleSortData, 5000);
+      timeoutId = setTimeout(handleSortData, 3000);
 
       return () => clearTimeout(timeoutId);
     }, [xAxisParam, yAxisParams, type, interval]);
@@ -68,16 +75,33 @@ const ControlCenter = ({ list }) => {
         setYAxisParams((prevParams) => {
           const updatedParams = [...prevParams];
           if (value !== undefined) {
-            updatedParams[index] = value
-            
-          }
-          return updatedParams.filter((param) => param !== undefined);
+            updatedParams[index] = value 
+          } 
+          return updatedParams //.filter((param) => param !== undefined);
         });
       };
     
       const handleIntervalChange = (value) => {
         setInterval(value);
       };
+
+      // Function to handle layout change
+      const handleLayoutChange = (newLayout) => {
+        setLayouts((prevLayouts) => ({ ...prevLayouts, lg: newLayout }));
+      };
+    
+      useEffect(() => {
+        // Generate the initial layout based on the number of charts
+        const initialLayout = charts.map((chart, index) => ({
+          i: String(chart.chartId),
+          x: index % 2 === 0 ? 0 : chartWidth,
+          y: Math.floor(index / 2) * chartHeight,
+          w: chartWidth,
+          h: chartHeight,
+        }));
+    
+        setLayouts((prevLayouts) => ({ ...prevLayouts, lg: initialLayout }));
+      }, [charts]);
 
       const handleChartIdChange = () => {
         const newChart = {
@@ -179,13 +203,9 @@ const ControlCenter = ({ list }) => {
                   ))}
                 </div>
               </> 
-          
-
-          
+    
             <button onClick={handleChartIdChange}>Add Chart</button>     
-          
 
-          
             <label htmlFor="chartId">Chart ID:</label>
             <select id="chartId">
               {chartIdList.map((id) => (
@@ -202,18 +222,36 @@ const ControlCenter = ({ list }) => {
           </div>
 )}
           </div>
+          <ResponsiveGridLayout
+            className="layout"
+            layouts={{ layouts }} // Initial layout based on the 'lg' breakpoint
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 2, md: 2, sm: 2, xs: 1, xxs: 1 }}
+            rowHeight={100}
+            width={1200} // Width of the grid container
+            onLayoutChange={handleLayoutChange}
+            draggableHandle=".chart-wrapper" // Specify the handle element for dragging
+            draggableCancel=".disable-drag"
+          >
           {charts.map((chart) => (
+            <div
+            key={chart.chartId}
+            className="chart-wrapper"
+            data-grid={{ w: chartWidth, h: chartHeight, x: 0, y: 0 }}
+            >
           <Chart
             // generateChart={generateChart}
             key={chart.chartId}
             chartId={chart.chartId}
             sortedData={chart.sortedData}
             xAxisParam={chart.xAxisParam}
-            yAxisParam={chart.yAxisParam}
+            yAxisParam={chart.yAxisParam.filter(param => param !== undefined)}
             title={chart.title}
             type={chart.type}
           />
-        ))}    
+        </div>
+        ))}
+      </ResponsiveGridLayout>
       </div>
     );
 };
@@ -249,6 +287,7 @@ const Chart = ({
     const yAxisData = sortedData.yAxisData;
     console.log('xAxisData:', xAxisData)
     console.log('yAxisData:', yAxisData)
+    console.log('yAxisParam:', yAxisParam)
   
     let series = [];
     let legendData = [];
@@ -320,17 +359,12 @@ const Chart = ({
   
     return (
       <>
-        <div style={{ width: "100%", height: '400px' }}>
-        {/* {(
-          generateChart && ( */}
               <ReactEcharts 
                 option={getOptions()} 
-                style={{ height: "400px", width: "100%" }} 
+                style={{ height: "100%", width: "100%" }} 
                 chartId={chartId}
               />
-          {/* )
-        )} */}
-        </div>
+        
         
         <div>Chart ID: {chartId}</div>
       </>

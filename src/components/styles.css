@@ -30,8 +30,6 @@ height: 350px;
 
 .box-container > :not(:first-child) {
   flex: 1 1 auto; /* Make the rest of the children have equal-sized portions */
-  flex-direction: column;
-  flex-wrap: wrap;
   
 }
   
