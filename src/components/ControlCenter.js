@@ -7,11 +7,11 @@ const ControlCenter = ({ list }) => {
     const [xAxisParam, setXAxisParam] = useState("");
     const [columnOptions, setColumnOptions] = useState([]);
     const [yAxisParams, setYAxisParams] = useState([]);
+    const [isIconActive, setIsIconActive] = useState([]);
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
     const [sortedData, setSortedData] = useState({});
-    const [seriesCount, setSeriesCount] = useState(1);
     const [interval, setInterval] = useState("");
     const [chartId, setChartId] = useState(1);
     const [chartIdList, setChartIdList] = useState([1]);
@@ -67,32 +67,17 @@ const ControlCenter = ({ list }) => {
       const handleYAxisChange = (value, index) => {
         setYAxisParams((prevParams) => {
           const updatedParams = [...prevParams];
-          updatedParams[index] = value;
-          return updatedParams;
+          if (value !== undefined) {
+            updatedParams[index] = value
+            
+          }
+          return updatedParams.filter((param) => param !== undefined);
         });
       };
     
       const handleIntervalChange = (value) => {
         setInterval(value);
       };
-    
-      const handleTitleChange = (e) => {
-        setTitle(e.target.value);
-      };
-    
-      const handleSeriesCount = (value) => {
-        setSeriesCount(value);
-      };
-    
-      const handleAddSeries = () => {
-        setSeriesCount((prevCount) => prevCount + 1);
-      };
-    
-      const handleRemoveSeries = () => {
-        if (seriesCount > 1) {
-          setSeriesCount((prevCount) => prevCount - 1);
-        }
-      };   
 
       const handleChartIdChange = () => {
         const newChart = {
@@ -114,8 +99,8 @@ const ControlCenter = ({ list }) => {
         setDataProcessed(false);
       };
 
-      const handleTypeChange = (event) => {
-        const selectedType = event.target.value;
+      const handleTypeChange = (selectedType) => {
+        
         setType(selectedType);
     
         if (selectedType === "line") {
@@ -131,47 +116,37 @@ const ControlCenter = ({ list }) => {
       };
       
       return (
-        <div className="box-container">
-          
-          <div className='box-chart'>
-            <label htmlFor="type">Chart Type:</label>
-            <select
-              id="type"
-              value={type}
-              onChange={handleTypeChange}
-              style={{ width: "200px" }}
-            >
-              <option value="">Blank</option>
-              <option value="line">line</option>
-              <option value="bar">bar</option>
-              <option value="pie">pie</option>
-            </select>
+        <div className="box-container">         
+        <div className='box-chart'>
+        <label htmlFor="type">Chart Type</label>
+          <div className="icon-container">
+          <div className={`chart-icon ${type === "line" ? "active" : ""}`} onClick={() => handleTypeChange("line")}>
+          <input type="checkbox" checked={type === "line"} onChange={() => handleTypeChange("line")}/>
+            Line 
           </div>
-    
-          <div className='box-chart'>
-            <label htmlFor="title">Chart Title:</label>
-            <input
-              id="title"
-              value={title}
-              onChange={handleTitleChange}
-              style={{ width: "200px" }}
-            />
+          <div className={`chart-icon ${type === "bar" ? "active" : ""}`} onClick={() => handleTypeChange("bar")}>
+          <input type="checkbox" checked={type === "bar"} onChange={() => handleTypeChange("bar")}/>
+            Bar
           </div>
+          <div className={`chart-icon ${type === "pie" ? "active" : ""}`} onClick={() => handleTypeChange("pie")}>
+          <input type="checkbox" checked={type === "pie"} onChange={() => handleTypeChange("pie")}/>
+            Pie
+          </div>
+        </div>
+      </div>
     
           <div className='box-chart'>
             {showxAxis && (
               <>
                 <label htmlFor="xAxisParam">X-Axis:</label>
-                <select
-                  onChange={(e) => handleXAxisChange(e.target.value)}
-                >
-                  <option key = '' value=''>Blank</option>
+                <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <option key={index} value={column}>
+                    <div key={index} className={`chart-icon ${xAxisParam === column ? "active" : ""}`} onClick={() => handleXAxisChange(column)}>
+                      <input type="checkbox" checked={xAxisParam === column} onChange={() => handleXAxisChange(column)}/>
                       {column}
-                    </option>
+                    </div>
                   ))}
-                </select>
+                </div>
               </>
             )}
           </div>
@@ -180,46 +155,36 @@ const ControlCenter = ({ list }) => {
           {xAxisParam === "datetime" && (
             <>
               <label>Interval:</label>
-              <select value={interval} onChange={(e) => handleIntervalChange(e.target.value)}>
-              <option key = '' value=''></option>
-                <option value="daily">Daily</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
+              <div className="icon-container">
+              <div className={`chart-icon ${interval === "daily" ? "active" : ""}`} onClick={() => handleIntervalChange("daily")}>
+                <input type="checkbox" checked={interval === "daily"} onChange={() => handleIntervalChange("daily")}/>
+                  Daily
+              </div>
+              <div className={`chart-icon ${interval === "monthly" ? "active" : ""}`} onClick={() => handleIntervalChange("monthly")}>
+                <input type="checkbox" checked={interval === "monthly"} onChange={() => handleIntervalChange("monthly")}/>
+                  Monthly
+              </div>
+              <div className={`chart-icon ${interval === "yearly" ? "active" : ""}`} onClick={() => handleIntervalChange("yearly")}>
+                <input type="checkbox" checked={interval === "yearly"} onChange={() => handleIntervalChange("yearly")}/>
+                  Yearly
+              </div>
+              </div>
             </>
           )}
           </div>
     
-        <div className="box-chart">
-          {Array.from({ length: Math.ceil(seriesCount / 3) }, (_, rowIndex) => (
-            <div className="row-options" key={rowIndex}>
-              {Array.from({ length: 3 }, (_, colIndex) => colIndex + rowIndex * 3).map(
-                (index) =>
-                  index < seriesCount && (
-                    <div className="column-options" key={index}>
-                      <label>Series {index + 1}:</label>
-                      <select
-                        onChange={(e) => handleYAxisChange(e.target.value, index)}
-                      >
-                        <option key = '' value=''>Blank</option>
-                        {columnOptions.map((column, columnIndex) => (
-                          <option key={columnIndex} value={column}>
-                            {column}
-                          </option>
-                        ))}
-                      </select>
+          <div className='box-chart'>   
+              <>
+                <label htmlFor="yAxisParams">Series</label>
+                <div className="icon-container">
+                  {columnOptions.map((column, index) => (
+                    <div key={index} className={`chart-icon ${yAxisParams[index] === column ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column} onChange={() => handleYAxisChange(column, index)}/>
+                      {column}
                     </div>
-                  )
-              )}
-            </div>
-          ))}
-        </div>
-    
-          <div className="box-chart">
-            <label>Series Count:</label>
-            <button onClick={handleRemoveSeries}>-</button>
-            <span>{seriesCount}</span>
-            <button onClick={handleAddSeries}>+</button>
+                  ))}
+                </div>
+              </> 
           </div>
 
           <div>
@@ -332,9 +297,6 @@ const Chart = ({
     }
   
     return {
-      title: {
-        text: title,
-      },
       legend: {
         show: type === "pie" ? false : true,
       },
