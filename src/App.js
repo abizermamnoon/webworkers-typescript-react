@@ -3,7 +3,7 @@ import Loader from "./components/Loader";
 import { ControlCenter, Chart } from "./components/ControlCenter";
 import { processList } from "./longProcesses/enums";
 import axios from 'axios';
-
+import './index.css'
 export const listPageSize = 10000;
 
 const App = () => {
@@ -98,17 +98,15 @@ const App = () => {
           {/* {data.path && <img src={data.path} alt={data.name} />} */}
 
       </div>
-      <section className="count">
-        Total count of Profiles is{" "}
-        <b>{lengthCount.loading ? <Loader size={14} /> : lengthCount.value}</b>
-      </section>
       <section className="table-container">
         {profileList.loading ? (
           <Loader size={40} display="block" />
         ) : (
           <>
-            <ControlCenter list={profileList.list} />
-            <Chart/>
+            <div className="control-side">
+              <ControlCenter list={profileList.list} />
+            </div>
+            
           </>
         )}
       </section>
