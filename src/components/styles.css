@@ -11,33 +11,19 @@ opacity: 1; /* Make the row fully visible */
 transform: translateY(0); /* Reset the row's position */
 }
 
-.main {
-width: 350px;
-height: 350px;
-}
-
 .box-container {
   display: flex;
-  /* flex-direction: row; Change flex-direction to column */
+  /* flex-direction: column; Change flex-direction to column */
   gap: 10px;
 }
 
-.box-container > :first-child {
-  flex: 0 0 30%; /* Set the width of the first child to 30% */
-  height: 100%;
-  
+.box-container > :not(:first-child) {
+  flex: 1 1 auto; /* Make the rest of the children have equal-sized portions */ 
 }
 
-.box-container > :not(:first-child) {
-  flex: 1 1 auto; /* Make the rest of the children have equal-sized portions */
+.chart-wrapper {
+  border: 2px solid #000;
   
-}
-  
-  
-.box-chart {
-width: 100%;
-height: 80px;
-gap: 10px;
 }
 
 .icon-container {
@@ -68,171 +54,3 @@ gap: 10px;
   background-color: #2196f3;
   color: #fff;
 }
-
-.box-chart > div {
-    flex: 0 calc(50% - 5px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.chart-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart-container .chart {
-  width: 100%;
-  height: 400px;
-}
-
-.controls {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .chart-wrapper {
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 20px;
-    align-items: flex-start;
-  }
-  
-  .chart {
-    /* flex: 1; */
-    width: 100%;
-    height: 400px;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    /* width: 100%;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px;
-    height: 400px; */
-  }
-  
-  .chart-wrapper .react-grid-item {
-    width: 100% !important;
-  }
-  
-  .box-column {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  
-  .box-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .container {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    height: 400px;
-    /* align-items: center;
-    padding-left: 250px; */
-    
-  }
-  
-  .column-options {
-    position: relative; 
-    /* left: 0; */
-    height: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    width: 900px; 
-    gap: 4px;
-    
-    /* border: 1px solid #ddd;
-    border-radius: 4px; */
-    /* padding: 10px; */
-  
-  }
-  
-  .option {
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    border: 1px solid #ddd; 
-    border-radius: 5px solid #ddd; 
-    cursor: pointer;
-    gap: 5px;
-    background-color: #CDCDCD;
-  }
-  
-  .main {
-    width: 350px;
-    height: 350px;
-  }
-  
-  .option.selected {
-    background-color: #ffec00;
-  }
-  
-  @media (min-width: 768px) {
-    .column-options {
-      justify-content: space-between;
-    }
-  }
-  
-  @media (min-width: 992px) {
-    .column-options {
-      justify-content: flex-start;
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-  }
-  
-  .column-table {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-  }
-  
-  /* Define the styles for specific breakpoints */
-  @media (max-width: 1200px) {
-    .layout {
-        grid-template-columns: repeat(10, 1fr); /* Adjust the number of columns for large desktop screens */
-    }
-    }
-    
-    @media (max-width: 996px) {
-    .layout {
-        grid-template-columns: repeat(6, 1fr); /* Adjust the number of columns for medium desktop screens */
-    }
-    }
-    
-    @media (max-width: 768px) {
-    .layout {
-        grid-template-columns: repeat(4, 1fr); /* Adjust the number of columns for small tablets and landscape phones */
-    }
-    }
-    
-    @media (max-width: 480px) {
-    .layout {
-        grid-template-columns: repeat(2, 1fr); /* Adjust the number of columns for small phones */
-    }
-    }
-  
-    .grid-stack {
-      position: relative;
-    }
-    
-    .grid-stack-item {
-      background-color: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 10px;
-    }  
-    
-  

@@ -4,8 +4,37 @@ import "./styles.css"
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import styled from "styled-components";
+import { IconContext } from "react-icons/lib";
+import { Link } from "react-router-dom";
+import * as FaIcons from "react-icons/fa";
+import * as AiIcons from "react-icons/ai";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
+
+const Nav = styled.div`
+  background: white;
+  height: 30px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+`;
+ 
+const ControlNav = styled.nav`
+  background: white;
+  width: 200px;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  top: 4;
+  left: ${({ control }) => (control ? "1" : "-100%")};
+  z-index: 10;
+`;
+ 
+const ControlWrap = styled.div`
+  width: 100%;
+`;
 
 const ControlCenter = ({ list }) => {
     const [data, setData] = useState(list);
@@ -22,8 +51,9 @@ const ControlCenter = ({ list }) => {
     const [charts, setCharts] = useState([]);
     const [dataProcessed, setDataProcessed] = useState(false);
     const [layouts, setLayouts] = useState({ lg: [] });
-    const chartWidth = 6;
-    const chartHeight = 4;
+    const [control, setControl] = useState(false);
+    const showControl = () => setControl(!control);
+
     useEffect(() => {
         if (list && list.length > 0) {
             const ordersData = list;
@@ -89,19 +119,6 @@ const ControlCenter = ({ list }) => {
       const handleLayoutChange = (newLayout) => {
         setLayouts((prevLayouts) => ({ ...prevLayouts, lg: newLayout }));
       };
-    
-      useEffect(() => {
-        // Generate the initial layout based on the number of charts
-        const initialLayout = charts.map((chart, index) => ({
-          i: String(chart.chartId),
-          x: index % 2 === 0 ? 0 : chartWidth,
-          y: Math.floor(index / 2) * chartHeight,
-          w: chartWidth,
-          h: chartHeight,
-        }));
-    
-        setLayouts((prevLayouts) => ({ ...prevLayouts, lg: initialLayout }));
-      }, [charts]);
 
       const handleChartIdChange = () => {
         const newChart = {
@@ -140,8 +157,16 @@ const ControlCenter = ({ list }) => {
       };
       
       return (
-        <div className="box-container">         
-        <div className='box-chart'>
+        <div className='box-container'>
+        <IconContext.Provider value={{ color: "black" }}>
+        <Nav>
+          
+            <FaIcons.FaBars onClick={showControl} />
+          
+       </Nav>
+       <ControlNav control={control}>
+          <ControlWrap>       
+              <AiIcons.AiOutlineClose onClick={showControl} />          
         <label htmlFor="type">Chart Type</label>
           <div className="icon-container">
           <div className={`chart-icon ${type === "line" ? "active" : ""}`} onClick={() => handleTypeChange("line")}>
@@ -215,18 +240,20 @@ const ControlCenter = ({ list }) => {
               ))}
             </select>
           
-
           {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
             Data processed...
           </div>
-)}
-          </div>
+          )}
+        </ControlWrap>
+        </ControlNav>
+      </IconContext.Provider>
+         
           <ResponsiveGridLayout
             className="layout"
             layouts={{ layouts }} // Initial layout based on the 'lg' breakpoint
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 2, md: 2, sm: 2, xs: 1, xxs: 1 }}
+            cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
             rowHeight={100}
             width={1200} // Width of the grid container
             onLayoutChange={handleLayoutChange}
@@ -237,7 +264,7 @@ const ControlCenter = ({ list }) => {
             <div
             key={chart.chartId}
             className="chart-wrapper"
-            data-grid={{ w: chartWidth, h: chartHeight, x: 0, y: 0 }}
+            data-grid={{ w: 6, h: 1, x: 0, y: 0 }}
             >
           <Chart
             // generateChart={generateChart}
@@ -302,7 +329,8 @@ const Chart = ({
           type: "pie",
           radius: "50%", // Set the radius of the pie chart
           label: {
-            show: true
+            show: true,
+            formatter: '{b} :{d}%',
           },
           labelLine: {
             show: true, // Show the label line
@@ -337,7 +365,7 @@ const Chart = ({
       tooltip: {
         show: type === "pie" ? true : false,
         trigger: type === "pie" ? 'item' : 'none',
-        formatter: '{a} <br/>{b} : {c} ({d}%)'
+        formatter: '{b} : {c} ({d}%)'
       },
       xAxis: {
         silent: true,
@@ -358,15 +386,13 @@ const Chart = ({
   };
   
     return (
-      <>
-              <ReactEcharts 
-                option={getOptions()} 
-                style={{ height: "100%", width: "100%" }} 
-                chartId={chartId}
-              />
-        
-        
-        <div>Chart ID: {chartId}</div>
+      <>    
+        <ReactEcharts 
+          option={getOptions()} 
+          style={{ height: "100%", width: "100%" }} 
+          chartId={chartId}
+        />
+        {/* <div>Chart ID: {chartId}</div> */}
       </>
     );
 };

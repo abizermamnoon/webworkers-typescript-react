@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import Loader from "./components/Loader";
-import { ControlCenter, Chart } from "./components/ControlCenter";
+import { ControlCenter } from "./components/ControlCenter";
 import { processList } from "./longProcesses/enums";
 import axios from 'axios';
 import './index.css'
+import Sidebar from "./sidebar/Sidebar"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 export const listPageSize = 10000;
 
 const App = () => {
@@ -87,17 +90,26 @@ const App = () => {
 
   return (
     <main className="main-container">
+    <div>
       <div>
-          <div className="file-upload">
-              <input type="file" ref={el} onChange={handleChange} />
-              <div className="progessBar" style={{ width: progress }}>{progress}</div>
-              <button onClick={uploadFile} className="upbutton">upload</button>
-          </div>
-          <hr />
-          {data.path && <div><textarea value={data.path} onChange={uploadFile} /></div>}
-          {/* {data.path && <img src={data.path} alt={data.name} />} */}
-
+        <Router>
+          <Sidebar />
+          <Routes>
+            <Route path='/chart' element={<ControlCenter/>} />
+          </Routes>
+        </Router>
       </div>
+      <div className="file-upload">
+        <input type="file" ref={el} onChange={handleChange} />
+        <div className="progressBar" style={{ width: progress }}>
+          {progress}
+        </div>
+        <button onClick={uploadFile} className="upbutton">upload</button>
+        <hr />
+      </div>
+      
+      {data.path && <div><textarea value={data.path} onChange={uploadFile} /></div>}
+      {/* {data.path && <img src={data.path} alt={data.name} />} */}
       <section className="table-container">
         {profileList.loading ? (
           <Loader size={40} display="block" />
@@ -106,13 +118,13 @@ const App = () => {
             <div className="control-side">
               <ControlCenter list={profileList.list} />
             </div>
-            
           </>
         )}
       </section>
-    </main>
-  );
-};
+    </div>
+  </main>
+);
+        };
 
 export default App;
 
