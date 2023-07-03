@@ -19,10 +19,7 @@ const LineChart = ({ list }) => {
   const [sortedData, setSortedData] = useState({});
   const [seriesCount, setSeriesCount] = useState(1);
   const [groupEnabled, setGroupEnabled] = useState(false);
-  const [generateChart, setGenerateChart] = useState(false);
-  const [shouldSortData, setShouldSortData] = useState(false);
   const [interval, setInterval] = useState("");
-  const TIMEOUT_DURATION = 5 * 60 * 1000;
   
   useEffect(() => {
     const ordersData = list;
@@ -39,12 +36,10 @@ const LineChart = ({ list }) => {
   }, [list]);
 
   useEffect(() => {
-    if (shouldSortData) {
       sortData(xAxisParam, yAxisParams, groupEnabled, type, interval);
-      setShouldSortData(false); // Reset the shouldSortData state after sorting
+
       
-    }
-  }, [shouldSortData, xAxisParam, yAxisParams, groupEnabled, type, interval]);
+    }, [xAxisParam, yAxisParams, groupEnabled, type, interval]);
 
   const counter = new Worker(new URL("../longProcesses/sortDataWorker.js", import.meta.url));
 
@@ -155,11 +150,6 @@ const LineChart = ({ list }) => {
 
   const handleHideControls = () => {
     setHideControls(true);
-  };
-
-  const handleGenerateChart = () => {
-    setGenerateChart(true);
-    setShouldSortData(true); // Set generateChart state to true when the button is clicked
   };
 
   const handleUnhideControls = () => {
@@ -284,25 +274,30 @@ const LineChart = ({ list }) => {
       )}
     </div>
 
-      <div className="box-chart">
-        {Array.from({ length: seriesCount }, (_, index) => index).map(
-          (index) => (
-            <div className="column-options" key={index}>
-              <label>Series {index + 1}:</label>
-              <select
-                onChange={(e) => handleYAxisChange(e.target.value, index)}
-              >
-                <option>Blank</option>
-                {columnOptions.map((column, index) => (
-                  <option key={index} value={column}>
-                    {column}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )
-        )}
-      </div>
+    <div className="box-chart">
+      {Array.from({ length: Math.ceil(seriesCount / 3) }, (_, rowIndex) => (
+        <div className="row-options" key={rowIndex}>
+          {Array.from({ length: 3 }, (_, colIndex) => colIndex + rowIndex * 3).map(
+            (index) =>
+              index < seriesCount && (
+                <div className="column-options" key={index}>
+                  <label>Series {index + 1}:</label>
+                  <select
+                    onChange={(e) => handleYAxisChange(e.target.value, index)}
+                  >
+                    <option>Blank</option>
+                    {columnOptions.map((column, columnIndex) => (
+                      <option key={columnIndex} value={column}>
+                        {column}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
+          )}
+        </div>
+      ))}
+    </div>
 
       <div className="box-chart">
         <label>Series Count:</label>
@@ -360,13 +355,9 @@ const LineChart = ({ list }) => {
         )}
       </div>
 
-      <div>
-      <button onClick={handleGenerateChart}>Generate Chart</button> {/* Add Generate Chart button */}
-      </div>
-
       <div className="box-chart">
       {(
-          generateChart && ( // Render the chart only when generateChart is true and loading state is false
+          ( // Render the chart only when generateChart is true and loading state is false
             <ReactEcharts option={getOptions()} style={{ height: "400px", width: "1000px" }} />
           )
         )}

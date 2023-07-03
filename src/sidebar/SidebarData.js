@@ -7,7 +7,7 @@ import * as RiIcons from "react-icons/ri";
 export const SidebarData = [
   {
     title: "Chart",
-    path: "/",
+    path: "/chart",
     icon: <AiIcons.AiFillHome />
   },
   {
