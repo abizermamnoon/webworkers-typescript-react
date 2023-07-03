@@ -28,12 +28,15 @@ const ControlNav = styled.nav`
   justify-content: center;
   position: fixed;
   top: 4;
-  left: ${({ control }) => (control ? "1" : "-100%")};
+  left: ${({ control }) => (control ? "auto" : "-100%")};
+  right: 0;
+  top: 0;
   z-index: 10;
 `;
  
 const ControlWrap = styled.div`
   width: 100%;
+  position: relative;
 `;
 
 const ControlCenter = ({ list }) => {
@@ -96,6 +99,26 @@ const ControlCenter = ({ list }) => {
             }
           };
         }, []);
+
+        useEffect(() => {
+          if (dataProcessed) {
+            // Perform sort and group logic in the backend
+            const newChart = {
+              chartId: chartId,
+              sortedData: sortedData,
+              xAxisParam: xAxisParam,
+              yAxisParam: yAxisParams,
+              title: title,
+              type: type,
+            };
+        
+            setCharts((prevCharts) => [...prevCharts, newChart]);
+            setChartId((prevId) => prevId + 1);
+            setChartIdList((prevList) => [...prevList, chartId + 1]);
+            setDataProcessed(false);
+          }
+        }, [dataProcessed, chartId, sortedData, xAxisParam, yAxisParams, title, type]);
+        
   
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
@@ -121,23 +144,13 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleChartIdChange = () => {
-        const newChart = {
-          chartId: chartId,
-          sortedData: sortedData,
-          xAxisParam: xAxisParam,
-          yAxisParam: yAxisParams,
-          title: title,
-          type: type,
-        };
-        setCharts((prevCharts) => [...prevCharts, newChart]);
-        setChartId((prevId) => prevId + 1);
-        setChartIdList((prevList) => [...prevList, chartId + 1]);
+        
         setXAxisParam("");
         setYAxisParams([]);
         setTitle("");
         setType("");
         setInterval("");
-        setDataProcessed(false);
+        
       };
 
       const handleTypeChange = (selectedType) => {
@@ -166,7 +179,7 @@ const ControlCenter = ({ list }) => {
        </Nav>
        <ControlNav control={control}>
           <ControlWrap>       
-              <AiIcons.AiOutlineClose onClick={showControl} />          
+              <AiIcons.AiOutlineClose onClick={showControl} style={{ position: "absolute", top: 0, right: 0 }}/>          
         <label htmlFor="type">Chart Type</label>
           <div className="icon-container">
           <div className={`chart-icon ${type === "line" ? "active" : ""}`} onClick={() => handleTypeChange("line")}>
