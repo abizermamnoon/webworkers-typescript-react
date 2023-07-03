@@ -1,13 +1,12 @@
 import React, { Component } from "react";
 import TabBar from "./container/TabBar/TabBar";
 import AnalyticContatiner from "./container/AnalyticContainer/AnalyticContainer";
-import "./index.css";
-import "./App.css"
+import "./App.css";
 import "tachyons";
 import FileCard from "./component/FileCard/FileCard";
 import axios from "axios";
 import Scroll from "./container/Scroll/Scroll";
-// import matchSorter from "match-sorter";
+import matchSorter from "match-sorter";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 class App extends Component {
@@ -28,7 +27,6 @@ class App extends Component {
         const reader = new FileReader();
         reader.onload = () => {
             const data = reader.result;
-            console.log("Data fetched:", data); // Print statement
             var myHeaders = new Headers();
             myHeaders.append("Content-Type", "application/json");
             fetch("http://localhost:5000/create", {
@@ -36,10 +34,7 @@ class App extends Component {
                 headers: myHeaders,
                 body: JSON.stringify({ data: data })
             }).then(res => {
-                res.json().then(data => {
-                    console.log("Table data received:", data); // Print statement
-                    this.createTable(data);
-                });
+                res.json().then(data => this.createTable(data));
             });
         };
         reader.readAsText(input.files[0]);
@@ -48,25 +43,21 @@ class App extends Component {
 
     createTable = tableData => {
         const data = tableData;
-        console.log("Creating table with data:", data);
-        // data.columns.map(obj => {
-        //     let o = Object.assign({}, obj);
-        //     o.filterMethod = (filter, rows) =>
-        //         matchSorter(rows, filter.value, { keys: ["lastName"] });
-        //     o.filterAll = true;
-        //     return o;
-        // });
+        data.columns.map(obj => {
+            let o = Object.assign({}, obj);
+            o.filterMethod = (filter, rows) =>
+                matchSorter(rows, filter.value, { keys: ["lastName"] });
+            o.filterAll = true;
+            return o;
+        });
         this.setState({
-            columns: data.columns.map(obj => {
-                let o = Object.assign({}, obj);
-                o.filterAll = true;
-                return o;
-            }),
+            columns: data.columns,
             data: data.data,
-            visibleColumns: data.columns.map(col => col.Header)
+            visibleColumns: data.columns.map(col => {
+                return col.Header;
+            })
         });
     };
-    
 
     updateColumns = e => {
         if (e.target.checked === false) {

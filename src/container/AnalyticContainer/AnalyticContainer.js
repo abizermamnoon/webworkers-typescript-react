@@ -4,7 +4,6 @@ import Table from "../Table/Table";
 class AnalyticContainer extends Component {
     render() {
         if (this.props.activeTab === "Table") {
-            console.log("AnalyticContainer props:", this.props); // Print statement
             return (
                 <div className="bg-lightest-blue ba shadow-5 br3" id="Table">
                     <Table

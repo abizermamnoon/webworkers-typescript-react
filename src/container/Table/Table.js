@@ -9,7 +9,6 @@ class Table extends Component {
             ...ReactTableDefaults.column,
             headerClassName: "wordwrap"
         };
-        console.log("Table props:", this.props);
         return (
             <ReactTable
                 filterable
