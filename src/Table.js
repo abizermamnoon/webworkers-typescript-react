@@ -3,11 +3,11 @@ import TabBar from "./container/TabBar/TabBar";
 import AnalyticContatiner from "./container/AnalyticContainer/AnalyticContainer";
 import "./App.css";
 import "tachyons";
-import FileCard from "./component/FileCard/FileCard";
 import axios from "axios";
 import Scroll from "./container/Scroll/Scroll";
 import matchSorter from "match-sorter";
 import "bootstrap/dist/css/bootstrap.min.css";
+import Loader from "./components/Loader";
 
 class App extends Component {
     constructor() {
@@ -18,63 +18,43 @@ class App extends Component {
             columns: [],
             data: [],
             visibleColumns: [],
-            // searchMethod: "regex"
+            searchMethod: "regex"
         };
     }
 
-    uploadFile = () => {
-        const input = document.getElementById("FileUpload");
-        const reader = new FileReader();
-        reader.onload = () => {
-            const data = reader.result;
-            var myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
-            fetch("http://localhost:5000/create", {
-                method: "POST",
-                headers: myHeaders,
-                body: JSON.stringify({ data: data })
-            }).then(res => {
-                res.json().then(data => this.createTable(data));
-            });
-        };
-        reader.readAsText(input.files[0]);
-        this.setState({ openFile: input.files[0] });
+    componentDidMount() {
+        this.fetchData();
+    }
+    
+    fetchData = () => {
+    const worker = new Worker(new URL("./longProcesses/getTable.js", import.meta.url));
+
+    worker.addEventListener("message", event => {
+        const data = event.data;
+        this.createTable(data);
+    });
+
+    worker.postMessage(""); // Pass an empty message since no file is being uploaded
     };
 
     createTable = tableData => {
+        console.log("Received tableData:", tableData);
+        if (tableData && tableData.columns && tableData.data) {
         const data = tableData;
-        data.columns.map(obj => {
-            let o = Object.assign({}, obj);
-            o.filterMethod = (filter, rows) =>
-                matchSorter(rows, filter.value, { keys: ["lastName"] });
-            o.filterAll = true;
-            return o;
-        });
+        // data.columns.map(obj => {
+        //     let o = Object.assign({}, obj);
+        //     o.filterMethod = (filter, rows) =>
+        //         matchSorter(rows, filter.value, { keys: ["lastName"] });
+        //     o.filterAll = true;
+        //     return o;
+        // });
         this.setState({
             columns: data.columns,
             data: data.data,
-            visibleColumns: data.columns.map(col => {
-                return col.Header;
-            })
         });
-    };
-
-    updateColumns = e => {
-        if (e.target.checked === false) {
-            this.setState({
-                visibleColumns: this.state.visibleColumns.filter(col => {
-                    console.log(col);
-                    console.log(e.target.value);
-                    return col !== e.target.value;
-                })
-            });
-        } else {
-            this.setState({
-                visibleColumns: this.state.visibleColumns.concat(
-                    String(e.target.value)
-                )
-            });
-        }
+    } else {
+        console.error("Invalid tableData format:", tableData);
+      }
     };
 
     defaultFilterMethod = selector => {
@@ -101,22 +81,18 @@ class App extends Component {
     render() {
         return (
             <div className="App container-fluid">
-                <TabBar
+                {/* <TabBar
                     changeTab={this.changeTab}
                     active={this.state.activeTab}
                     style={{ zIndex: 1 }}
-                />
+                /> */}
 
-                {this.state.openFile !== "" ? (
+            {this.state.data.length > 0 ? (
                     <Scroll className="absolute pa5 row pagination-centered">
                         <AnalyticContatiner
                             activeTab={this.state.activeTab}
                             data={this.state.data}
-                            columns={this.state.columns.filter(col => {
-                                return this.state.visibleColumns.includes(
-                                    col.Header
-                                );
-                            })}
+                            columns={this.state.columns}
                             style={{ zIndex: -1 }}
                             defaultFilterMethod={this.defaultFilterMethod(
                                 this.state.searchMethod
@@ -125,7 +101,7 @@ class App extends Component {
                     </Scroll>
                 ) : (
                     <div className="center pa7 db row">
-                        <FileCard onSubmit={this.uploadFile} />
+                        <Loader size={40} display="block" />
                     </div>
                 )}
                 

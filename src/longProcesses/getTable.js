@@ -1,38 +1,27 @@
 /* eslint-disable no-restricted-globals */
+// getTable.js
 import axios from "axios";
-import { processList } from "./enums";
 
-self.onmessage = (e) => {
-  const data = JSON.parse(e.data);
-
-  if (data.action !== processList.getData) {
-    return;
-  }
-
-  if (data.period === "initial") {
-    axios
-      .get("http://localhost:5000")
-      .then((response) => {
-        console.log("Response received:", response);
-        const items = response.data;
-
-        console.log("List:", items); // Print the list
-
-      const profileList = {
-        loading: false,
-        list: items,
-        page: data.thePageNumber,
-      };
-
-      self.postMessage(JSON.stringify(profileList));
+self.addEventListener("message", event => {
+    console.log("Web worker initiated");
+    const data = event.data;
+  
+    fetch("http://localhost:5000/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ data: data })
     })
-    .catch((error) => {
-      console.error(error);
-      self.postMessage(
-        JSON.stringify({ loading: false, list: [], page: 1 })
-      );
-    });
-}
-};
-
+      .then(response => response.json())
+      .then(data => {
+        console.log("Data received from backend:", data); // Print statement for received data
+        self.postMessage(data);
+      })
+      .catch(error => {
+        console.log("Error occurred:", error); // Print statement for error
+        self.postMessage({ error: error.message });
+      });
+  });
+  
 export {};
