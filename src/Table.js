@@ -18,7 +18,9 @@ class App extends Component {
             columns: [],
             data: [],
             visibleColumns: [],
-            searchMethod: "regex"
+            selectedColumn: "",
+            groups: [], // Added groups state
+            selectedGroups: [] // Added selectedGroup state
         };
     }
 
@@ -41,13 +43,6 @@ class App extends Component {
         console.log("Received tableData:", tableData);
         if (tableData && tableData.columns && tableData.data) {
         const data = tableData;
-        // data.columns.map(obj => {
-        //     let o = Object.assign({}, obj);
-        //     o.filterMethod = (filter, rows) =>
-        //         matchSorter(rows, filter.value, { keys: ["lastName"] });
-        //     o.filterAll = true;
-        //     return o;
-        // });
         this.setState({
             columns: data.columns,
             data: data.data,
@@ -57,46 +52,87 @@ class App extends Component {
       }
     };
 
-    defaultFilterMethod = selector => {
-        switch (selector) {
-        default:
-            return (filter, row) => {
-                try {
-                    return String(row[filter.id])
-                        .toLowerCase()
-                        .search(filter.value.toLowerCase()) === -1
-                        ? false
-                        : true;
-                } catch (e) {
-                    return false;
-                }
-            };
-        }
+    handleColumnSelect = event => {
+        const selectedColumn = event.target.value;
+        this.setState({ selectedColumn });
+
+        // Send POST request to Flask backend
+        axios
+        .post("http://localhost:5000/get_groups", { column: selectedColumn })
+        .then(response => {
+            // Handle the response from the backend
+            console.log("Groups:", response.data);
+            // Update the state with the received groups if necessary
+            this.setState({ groups: response.data, selectedGroup: "" });
+        })
+        .catch(error => {
+            console.error("Error retrieving groups:", error);
+        });
     };
 
-    updateSearchMethod = newMethod => {
-        this.setState({ searchMethod: newMethod });
+    handleGroupSelect = (event) => {
+        const selectedGroups = Array.from(event.target.selectedOptions, (option) =>
+            option.value
+        );
+        this.setState({ selectedGroups });
+
+        if (selectedGroups.length > 0) {
+            axios
+            .post("http://localhost:5000/filter", { group: selectedGroups })
+            .then(response => {
+                // Handle the response from the backend
+                console.log("Filtered Data:", response.data);
+                // Update the state with the received groups if necessary
+                this.setState({ data: response.data.data });
+            })
+            .catch(error => {
+                console.error("Error retrieving Filtered Data:", error);
+            });
+        } else {
+            // Reset to the original table data
+            this.fetchData();
+        }
+        console.log("Selected Groups:", selectedGroups);
     };
 
     render() {
+        const { data, columns, selectedColumn, groups, selectedGroups } = this.state;
         return (
             <div className="App container-fluid">
-                {/* <TabBar
-                    changeTab={this.changeTab}
-                    active={this.state.activeTab}
-                    style={{ zIndex: 1 }}
-                /> */}
-
+                <div className="d-flex mb-3">
+                    <div className="mr-3">
+                        <label>Group by:</label>
+                            <select value={selectedColumn} onChange={this.handleColumnSelect}>
+                                <option value=""></option>
+                                {columns.map(column => (
+                                    <option key={column.accessor} value={column.accessor}>
+                                        {column.Header}
+                                    </option>
+                                ))}
+                            </select>
+                    </div>
+                    <div className="pl-3">
+                        <label>Filter by:</label>
+                        <select
+                            value={selectedGroups}
+                            onChange={this.handleGroupSelect}
+                            multiple
+                        >
+                            {groups.map((group) => (
+                                <option key={group} value={group} selected={selectedGroups.includes(group)}>
+                                {group}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
             {this.state.data.length > 0 ? (
                     <Scroll className="absolute pa5 row pagination-centered">
                         <AnalyticContatiner
                             activeTab={this.state.activeTab}
-                            data={this.state.data}
+                            data={this.state.data} // Use the first 100 rows
                             columns={this.state.columns}
                             style={{ zIndex: -1 }}
-                            defaultFilterMethod={this.defaultFilterMethod(
-                                this.state.searchMethod
-                            )}
                         />
                     </Scroll>
                 ) : (

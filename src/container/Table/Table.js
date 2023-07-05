@@ -11,8 +11,8 @@ class Table extends Component {
         };
         return (
             <ReactTable
-                filterable
-                defaultFilterMethod={this.props.defaultFilterMethod}
+                // filterable
+                // defaultFilterMethod={this.props.defaultFilterMethod}
                 data={this.props.data}
                 columns={this.props.columns}
                 column={columnDefaults}

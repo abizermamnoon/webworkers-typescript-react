@@ -9,7 +9,7 @@ class AnalyticContainer extends Component {
                     <Table
                         columns={this.props.columns}
                         data={this.props.data}
-                        defaultFilterMethod={this.props.defaultFilterMethod}
+                        // defaultFilterMethod={this.props.defaultFilterMethod}
                     />
                 </div>
             );

@@ -277,7 +277,7 @@ const ControlCenter = ({ list }) => {
             <div
             key={chart.chartId}
             className="chart-wrapper"
-            data-grid={{ w: 6, h: 1, x: 0, y: 0 }}
+            data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
             >
           <Chart
             // generateChart={generateChart}
