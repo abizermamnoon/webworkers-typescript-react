@@ -12,6 +12,7 @@ export const listPageSize = 10000;
 
 const App = () => {
   const [file, setFile] = useState('');
+  const [columnTypes, setColumnTypes] = useState([]);
   const [data, getFile] = useState({ name: "", path: "" });
   const [progress, setProgess] = useState(0);
   const el = useRef();

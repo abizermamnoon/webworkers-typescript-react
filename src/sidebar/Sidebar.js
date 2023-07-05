@@ -22,7 +22,7 @@ const NavIcon = styled(Link)`
   justify-content: flex-start;
   align-items: center;
   position: absolute;
-  top: 1;
+  top: 0;
   left: 1;
 `;
  
@@ -31,7 +31,8 @@ const SidebarNav = styled.nav`
   width: 150px;
   height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   position: fixed;
   top: 0;
   left: ${({ sidebar }) => (sidebar ? "0" : "-100%")};
@@ -39,16 +40,16 @@ const SidebarNav = styled.nav`
 `;
  
 const SidebarWrap = styled.div`
-  width: 50%;
+  width: 100%;
 `;
 
 const SidebarItem = styled(Link)`
   display: flex;
   align-items: center;
   text-decoration: none;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem;
   color: black;
-  &:hover {
+  &:not(:first-child):hover {
     background-color: yellow;
   }
 `;
@@ -68,9 +69,12 @@ const Sidebar = () => {
        </Nav>
         <SidebarNav sidebar={sidebar}>
           <SidebarWrap>
-            <NavIcon to="#">
-              <AiIcons.AiOutlineClose onClick={showSidebar} />
-            </NavIcon>
+            <SidebarItem>
+              <NavIcon to="#">
+                <AiIcons.AiOutlineClose onClick={showSidebar} />
+              </NavIcon>
+            </SidebarItem>
+            
             {SidebarData.map((item, index) => (
               <SidebarItem to={item.path} key={index}>
                 {/* {item.icon} */}

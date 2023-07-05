@@ -9,6 +9,7 @@ import { IconContext } from "react-icons/lib";
 import { Link } from "react-router-dom";
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
+import axios from 'axios';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -43,6 +44,7 @@ const ControlCenter = ({ list }) => {
     const [data, setData] = useState(list);
     const [xAxisParam, setXAxisParam] = useState("");
     const [columnOptions, setColumnOptions] = useState([]);
+    const [columnTypes, setColumnTypes] = useState([]);
     const [yAxisParams, setYAxisParams] = useState([]);
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
@@ -66,15 +68,27 @@ const ControlCenter = ({ list }) => {
             // Extract column names from the orders data
             const columns = Object.keys(ordersData[0]);
             setColumnOptions(columns);
-            sortData(ordersData, "");
-          }
-        }, [list]);
+            // Retrieve column types from the server
+            axios
+            .post("http://localhost:5000/coltype")
+            .then(response => {
+              // Handle the response from the backend
+              console.log("Column Types:", response.data);
+              setColumnTypes(response.data);
+            })
+            .catch(error => {
+              console.error("Error retrieving Column Types:", error);
+            });
+
+          sortData(ordersData, "");
+        }
+      }, [list]);
     
     useEffect(() => {   
       let timeoutId;
 
       const handleSortData = () => {
-        sortData(xAxisParam, yAxisParams.filter(param => param !== undefined), type, interval);
+        sortData(xAxisParam, yAxisParams.filter(param => param !== undefined && columnTypes[param] === 'int'), type, interval);
         clearTimeout(timeoutId);
       };
 
@@ -127,9 +141,12 @@ const ControlCenter = ({ list }) => {
       const handleYAxisChange = (value, index) => {
         setYAxisParams((prevParams) => {
           const updatedParams = [...prevParams];
-          if (value !== undefined) {
+          if (value !== undefined && columnTypes[value] === 'int') {
             updatedParams[index] = value 
-          } 
+          } else {
+            // Show error message when the selected series column is not of type "int"
+            alert("Series options must be of type float");
+          }
           return updatedParams //.filter((param) => param !== undefined);
         });
       };
@@ -144,13 +161,11 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleChartIdChange = () => {
-        
         setXAxisParam("");
         setYAxisParams([]);
         setTitle("");
         setType("");
         setInterval("");
-        
       };
 
       const handleTypeChange = (selectedType) => {
@@ -203,7 +218,7 @@ const ControlCenter = ({ list }) => {
                   {columnOptions.map((column, index) => (
                     <div key={index} className={`chart-icon ${xAxisParam === column ? "active" : ""}`} onClick={() => handleXAxisChange(column)}>
                       <input type="checkbox" checked={xAxisParam === column} onChange={() => handleXAxisChange(column)}/>
-                      {column}
+                      {column} ({columnTypes[column]})
                     </div>
                   ))}
                 </div>
@@ -234,9 +249,9 @@ const ControlCenter = ({ list }) => {
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <div key={index} className={`chart-icon ${yAxisParams[index] === column ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
-                      <input type="checkbox" checked={yAxisParams[index] === column} onChange={() => handleYAxisChange(column, index)}/>
-                      {column}
+                    <div key={index} className={`chart-icon ${yAxisParams[index] === column && columnTypes[column] === 'int' ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column && columnTypes[column] === 'int'} onChange={() => handleYAxisChange(column, index)}/>
+                      {column} ({columnTypes[column]})
                     </div>
                   ))}
                 </div>
@@ -285,7 +300,7 @@ const ControlCenter = ({ list }) => {
             chartId={chart.chartId}
             sortedData={chart.sortedData}
             xAxisParam={chart.xAxisParam}
-            yAxisParam={chart.yAxisParam.filter(param => param !== undefined)}
+            yAxisParam={chart.yAxisParam.filter(param => param !== undefined && columnTypes[param] === 'int')}
             title={chart.title}
             type={chart.type}
           />
