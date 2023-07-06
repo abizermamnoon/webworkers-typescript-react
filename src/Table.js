@@ -20,7 +20,8 @@ class App extends Component {
             visibleColumns: [],
             selectedColumn: "",
             groups: [], // Added groups state
-            selectedGroups: [] // Added selectedGroup state
+            selectedGroups: [], // Added selectedGroup state
+            calculation: ""
         };
     }
 
@@ -95,6 +96,36 @@ class App extends Component {
         console.log("Selected Groups:", selectedGroups);
     };
 
+    handleCalculateChange = (e) => {
+        this.setState({ calculation: e.target.value });
+    };
+
+    handleCalculateKeyDown = (e) => {
+        if (e.key === 'Enter') {
+          this.postCalculation();
+        }
+      };
+    
+      postCalculation = () => {
+        const { calculation } = this.state;
+    
+        axios
+          .post("http://localhost:5000/calculation", { calculation: calculation })
+          .then(response => {
+            // Handle the response from the backend
+            console.log("Calculation result:", response.data);
+
+            this.setState({
+                columns: response.data.columns,
+                data: response.data.data,
+            });
+            
+          })
+          .catch(error => {
+            console.error("Error posting calculation:", error);
+          });
+      };
+
     render() {
         const { data, columns, selectedColumn, groups, selectedGroups } = this.state;
         return (
@@ -103,10 +134,10 @@ class App extends Component {
                     <div className="mr-3">
                         <label>Group by:</label>
                             <select value={selectedColumn} onChange={this.handleColumnSelect}>
-                                <option value=""></option>
-                                {columns.map(column => (
-                                    <option key={column.accessor} value={column.accessor}>
-                                        {column.Header}
+                                <option key="" value=""></option>
+                                {columns.map((column, index) => (
+                                    <option key={`column-${index}`} value={column.accessor}>
+                                    {column.Header}
                                     </option>
                                 ))}
                             </select>
@@ -118,12 +149,16 @@ class App extends Component {
                             onChange={this.handleGroupSelect}
                             multiple
                         >
-                            {groups.map((group) => (
-                                <option key={group} value={group} selected={selectedGroups.includes(group)}>
+                            {groups.map((group, index) => (
+                                <option key={`group-${index}`} value={group} selected={selectedGroups.includes(group)}>
                                 {group}
                                 </option>
                             ))}
                         </select>
+                    </div>
+                    <div className="pl-3">
+                        <label>Calculation  : </label>
+                        <input id="calculation" value={this.state.calculation} onChange={this.handleCalculateChange} onKeyDown={this.handleCalculateKeyDown} style={{ width: '400px' }} />
                     </div>
                 </div>
             {this.state.data.length > 0 ? (
