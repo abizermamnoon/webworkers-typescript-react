@@ -21,7 +21,8 @@ class App extends Component {
             selectedColumn: "",
             groups: [], // Added groups state
             selectedGroups: [], // Added selectedGroup state
-            calculation: ""
+            calculation: "",
+            columnTypes: [],
         };
     }
 
@@ -35,6 +36,7 @@ class App extends Component {
     worker.addEventListener("message", event => {
         const data = event.data;
         this.createTable(data);
+        this.findcol(data);
     });
 
     worker.postMessage(""); // Pass an empty message since no file is being uploaded
@@ -52,6 +54,21 @@ class App extends Component {
         console.error("Invalid tableData format:", tableData);
       }
     };
+
+    findcol = tableData => {
+        if (tableData) {
+            axios
+            .post("http://localhost:5000/coltype")
+            .then(response => {
+              // Handle the response from the backend
+              console.log("Column Types:", response.data);
+              this.setState({ columnTypes: response.data});
+            })
+            .catch(error => {
+              console.error("Error retrieving Column Types:", error);
+            });
+        }
+    }
 
     handleColumnSelect = event => {
         const selectedColumn = event.target.value;
@@ -136,9 +153,12 @@ class App extends Component {
                             <select value={selectedColumn} onChange={this.handleColumnSelect}>
                                 <option key="" value=""></option>
                                 {columns.map((column, index) => (
-                                    <option key={`column-${index}`} value={column.accessor}>
-                                    {column.Header}
-                                    </option>
+                                    // Only render the option if the column data type is string
+                                    this.state.columnTypes[column.accessor] === "string" && (
+                                        <option key={`column-${index}`} value={column.accessor}>
+                                            {column.Header}
+                                        </option>
+                                    )
                                 ))}
                             </select>
                     </div>

@@ -88,7 +88,7 @@ const ControlCenter = ({ list }) => {
       let timeoutId;
 
       const handleSortData = () => {
-        sortData(xAxisParam, yAxisParams.filter(param => param !== undefined && columnTypes[param] === 'int'), type, interval);
+        sortData(xAxisParam, yAxisParams.filter(param => param !== undefined), type, interval);
         clearTimeout(timeoutId);
       };
 
@@ -141,7 +141,9 @@ const ControlCenter = ({ list }) => {
       const handleYAxisChange = (value, index) => {
         setYAxisParams((prevParams) => {
           const updatedParams = [...prevParams];
-          if (value !== undefined && columnTypes[value] === 'int') {
+          if (value !== undefined && columnTypes[value] === 'int' && (type !== 'pie')) {
+            updatedParams[index] = value;
+          } else if (value !== undefined && type === 'pie') { 
             updatedParams[index] = value 
           } else {
             // Show error message when the selected series column is not of type "int"
@@ -249,8 +251,8 @@ const ControlCenter = ({ list }) => {
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <div key={index} className={`chart-icon ${yAxisParams[index] === column && columnTypes[column] === 'int' ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
-                      <input type="checkbox" checked={yAxisParams[index] === column && columnTypes[column] === 'int'} onChange={() => handleYAxisChange(column, index)}/>
+                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || type === 'pie') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || (columnTypes[column] === 'int' && type !== 'pie'))} onChange={() => handleYAxisChange(column, index)} />
                       {column} ({columnTypes[column]})
                     </div>
                   ))}
