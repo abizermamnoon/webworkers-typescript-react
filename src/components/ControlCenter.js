@@ -349,16 +349,6 @@ const ControlCenter = ({ list }) => {
             Data processed...
           </div>
           )}
- 
-            <label>Chart ID:</label>
-            <select id="chartId" onChange={handleChartIdChange} value={selectedChartId}>
-              <option key="" value=""></option>
-              {chartIdList.map((id) => (
-                <option key={id} value={id}>
-                  {id}
-                </option>
-              ))}
-            </select>
             
             {selectedChartId !== null && (
                 <button onClick={handleUpdateChartChange}>Update Chart</button>
@@ -399,7 +389,8 @@ const ControlCenter = ({ list }) => {
                 title={chart.title}
                 type={chart.type}
                 onRemoveChart={handleRemoveChart}
-              
+                onSelectChart={setSelectedChartId} 
+                onChartID={handleChartIdChange}           
               />
             </div>
           ))}
@@ -416,6 +407,8 @@ const Chart = ({
   yAxisParam,  
   type,
   onRemoveChart,
+  onSelectChart,
+  onChartID,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
@@ -426,12 +419,28 @@ const Chart = ({
       }
   }, [xAxisParam, yAxisParam, sortedData]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (onSelectChart && event.key === "Backspace") {
+        onRemoveChart(chartId);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [chartId, onRemoveChart, onSelectChart]);
+
+
   if (!isReady ) {
       return null; // Don't render the chart if the necessary variables are not ready
   }
 
-  const handleRemoveChart = () => {
-    onRemoveChart(chartId);
+  const handleSelectChart = () => {
+    onSelectChart(chartId);
+    onChartID({ target: { value: chartId } });
   };
   
   const getOptions = () => {
@@ -460,6 +469,7 @@ const Chart = ({
           label: {
             show: true,
             formatter: '{b} :{d}%',
+            
           },
           labelLine: {
             show: true, // Show the label line
@@ -515,17 +525,19 @@ const Chart = ({
   };
   
     return (
-      <>   
-        <button onClick={handleRemoveChart}>
-          <FaMinus />
-        </button>
+      
+       
+      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
+        
         <ReactEcharts 
           option={getOptions()} 
-          style={{ height: "95%", width: "95%" }} 
+          style={{ height: "100%", width: "100%" }} 
           chartId={chartId}
         />
-        <p>Chart ID: {chartId}</p> {/* Render the chartId as a separate element */}
-      </>
+
+      </div>
+      
+      
     );
 };
 
