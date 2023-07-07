@@ -8,8 +8,10 @@ import styled from "styled-components";
 import { IconContext } from "react-icons/lib";
 import { Link } from "react-router-dom";
 import * as FaIcons from "react-icons/fa";
+import { FaMinus } from 'react-icons/fa';
 import * as AiIcons from "react-icons/ai";
 import axios from 'axios';
+import Scroll from "../container/Scroll/Scroll";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -58,6 +60,9 @@ const ControlCenter = ({ list }) => {
     const [layouts, setLayouts] = useState({ lg: [] });
     const [control, setControl] = useState(false);
     const showControl = () => setControl(!control);
+    const [stored, setStored] = useState({});
+    const [selectedChartId, setSelectedChartId] = useState(null);
+    
 
     useEffect(() => {
         if (list && list.length > 0) {
@@ -114,31 +119,21 @@ const ControlCenter = ({ list }) => {
           };
         }, []);
 
-        useEffect(() => {
-          if (dataProcessed) {
-            // Perform sort and group logic in the backend
-            const newChart = {
-              chartId: chartId,
-              sortedData: sortedData,
-              xAxisParam: xAxisParam,
-              yAxisParam: yAxisParams,
-              title: title,
-              type: type,
-            };
+        console.log('stored:', stored);
         
-            setCharts((prevCharts) => [...prevCharts, newChart]);
-            setChartId((prevId) => prevId + 1);
-            setChartIdList((prevList) => [...prevList, chartId + 1]);
-            setDataProcessed(false);
-          }
-        }, [dataProcessed, chartId, sortedData, xAxisParam, yAxisParams, title, type]);
-        
-  
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
         };
     
       const handleYAxisChange = (value, index) => {
+        if (yAxisParams[index] === value) {
+          // If the clicked chart icon is already active, make it inactive
+          setYAxisParams((prevParams) => {
+            const updatedParams = [...prevParams];
+            updatedParams[index] = undefined; // Deselect the series option
+            return updatedParams;
+          });
+        } else {
         setYAxisParams((prevParams) => {
           const updatedParams = [...prevParams];
           if (value !== undefined && columnTypes[value] === 'int' && (type !== 'pie')) {
@@ -151,6 +146,7 @@ const ControlCenter = ({ list }) => {
           }
           return updatedParams //.filter((param) => param !== undefined);
         });
+      }
       };
     
       const handleIntervalChange = (value) => {
@@ -162,12 +158,50 @@ const ControlCenter = ({ list }) => {
         setLayouts((prevLayouts) => ({ ...prevLayouts, lg: newLayout }));
       };
 
-      const handleChartIdChange = () => {
+      const handleAddChartChange = () => {
+        const newChart = {
+          chartId: chartId,
+          sortedData: sortedData,
+          xAxisParam: xAxisParam,
+          yAxisParam: yAxisParams,
+          type: type,
+        };
+    
+        setCharts((prevCharts) => [...prevCharts, newChart]);
+        setChartId((prevId) => prevId + 1);
+        setChartIdList((prevList) => [...prevList, chartId + 1]);
+        setDataProcessed(false);
+
+        setStored((prevStored) => ({
+          ...prevStored,
+          [chartId]: {
+            xAxisParam: xAxisParam,
+            yAxisParams: yAxisParams,
+            type: type,
+            interval: interval,
+          },
+        }));
+
         setXAxisParam("");
         setYAxisParams([]);
         setTitle("");
         setType("");
         setInterval("");
+      };
+
+      const handleChartIdChange = (event) => {
+        const selectedId = parseInt(event.target.value);
+        setSelectedChartId(selectedId);
+    
+        if (stored[selectedId]) {
+          const { xAxisParam, yAxisParams, title, type, interval } = stored[selectedId];
+    
+          setXAxisParam(xAxisParam);
+          setYAxisParams(yAxisParams);
+          setTitle(title);
+          setType(type);
+          setInterval(interval);
+        }
       };
 
       const handleTypeChange = (selectedType) => {
@@ -185,17 +219,65 @@ const ControlCenter = ({ list }) => {
         }
        
       };
-      
+
+      const handleRemoveChart = (chartId) => {
+        setCharts((prevCharts) => prevCharts.filter((chart) => chart.chartId !== chartId));
+        setStored((prevStored) => {
+          const updatedStored = { ...prevStored };
+          delete updatedStored[chartId];
+          return updatedStored;
+        });
+        setChartIdList((prevList) => prevList.filter((id) => id !== chartId));
+      };
+
+      const handleUpdateChartChange = () => {
+        
+        handleRemoveChart(selectedChartId)
+        const newChart = {
+          chartId: chartId,
+          sortedData: sortedData,
+          xAxisParam: xAxisParam,
+          yAxisParam: yAxisParams,
+          type: type,
+        };
+    
+        setCharts((prevCharts) => [...prevCharts, newChart]);
+        setChartId((prevId) => prevId + 1);
+        setChartIdList((prevList) => [...prevList, chartId + 1]);
+        setDataProcessed(false);
+
+        setStored((prevStored) => ({
+          ...prevStored,
+          [chartId]: {
+            xAxisParam: xAxisParam,
+            yAxisParams: yAxisParams,
+            type: type,
+            interval: interval,
+          },
+        }));
+
+        setXAxisParam("");
+        setYAxisParams([]);
+        setTitle("");
+        setType("");
+        setInterval("");
+        setSelectedChartId(null)
+        
+      };
+
       return (
         <div className='box-container'>
+        
         <IconContext.Provider value={{ color: "black" }}>
         <Nav>
           
             <FaIcons.FaBars onClick={showControl} />
           
        </Nav>
+       
        <ControlNav control={control}>
-          <ControlWrap>       
+          <ControlWrap> 
+          <Scroll>      
               <AiIcons.AiOutlineClose onClick={showControl} style={{ position: "absolute", top: 0, right: 0 }}/>          
         <label htmlFor="type">Chart Type</label>
           <div className="icon-container">
@@ -251,33 +333,43 @@ const ControlCenter = ({ list }) => {
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || type === 'pie') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
-                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || (columnTypes[column] === 'int' && type !== 'pie'))} onChange={() => handleYAxisChange(column, index)} />
+                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie'))} onChange={() => handleYAxisChange(column, index)} />
                       {column} ({columnTypes[column]})
                     </div>
                   ))}
                 </div>
               </> 
-    
-            <button onClick={handleChartIdChange}>Add Chart</button>     
+            {selectedChartId === null && (
+            <button onClick={handleAddChartChange}>Add Chart</button>     
+            )}
 
-            <label htmlFor="chartId">Chart ID:</label>
-            <select id="chartId">
+            {dataProcessed && (
+          <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
+            Data processed...
+          </div>
+          )}
+ 
+            <label>Chart ID:</label>
+            <select id="chartId" onChange={handleChartIdChange} value={selectedChartId}>
+              <option key="" value=""></option>
               {chartIdList.map((id) => (
                 <option key={id} value={id}>
                   {id}
                 </option>
               ))}
             </select>
-          
-          {dataProcessed && (
-          <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
-            Data processed...
-          </div>
-          )}
+            
+            {selectedChartId !== null && (
+                <button onClick={handleUpdateChartChange}>Update Chart</button>
+            )}
+
+            </Scroll>
         </ControlWrap>
         </ControlNav>
+        
       </IconContext.Provider>
+      
          
           <ResponsiveGridLayout
             className="layout"
@@ -292,26 +384,29 @@ const ControlCenter = ({ list }) => {
           >
           {charts.map((chart) => (
             <div
-            key={chart.chartId}
-            className="chart-wrapper"
-            data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
+              key={chart.chartId}
+              className="chart-wrapper"
+              data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
             >
-          <Chart
-            // generateChart={generateChart}
-            key={chart.chartId}
-            chartId={chart.chartId}
-            sortedData={chart.sortedData}
-            xAxisParam={chart.xAxisParam}
-            yAxisParam={chart.yAxisParam.filter(param => param !== undefined && columnTypes[param] === 'int')}
-            title={chart.title}
-            type={chart.type}
-          />
-        </div>
-        ))}
-      </ResponsiveGridLayout>
-      </div>
-    );
-};
+              <Chart
+                key={chart.chartId}
+                chartId={chart.chartId}
+                sortedData={chart.sortedData}
+                xAxisParam={chart.xAxisParam}
+                yAxisParam={chart.yAxisParam.filter(
+                  (param) => param !== undefined && columnTypes[param] === "int"
+                )}
+                title={chart.title}
+                type={chart.type}
+                onRemoveChart={handleRemoveChart}
+              
+              />
+            </div>
+          ))}
+          
+    </ResponsiveGridLayout>
+    </div>
+)};
 
 const Chart = ({ 
   // generateChart,
@@ -319,8 +414,8 @@ const Chart = ({
   sortedData,
   xAxisParam,
   yAxisParam,  
-  title,
-  type
+  type,
+  onRemoveChart,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
@@ -331,9 +426,13 @@ const Chart = ({
       }
   }, [xAxisParam, yAxisParam, sortedData]);
 
-  if (!isReady) {
+  if (!isReady ) {
       return null; // Don't render the chart if the necessary variables are not ready
   }
+
+  const handleRemoveChart = () => {
+    onRemoveChart(chartId);
+  };
   
   const getOptions = () => {
     if (!sortedData || !sortedData.yAxisData) {
@@ -416,13 +515,16 @@ const Chart = ({
   };
   
     return (
-      <>    
+      <>   
+        <button onClick={handleRemoveChart}>
+          <FaMinus />
+        </button>
         <ReactEcharts 
           option={getOptions()} 
-          style={{ height: "100%", width: "100%" }} 
+          style={{ height: "95%", width: "95%" }} 
           chartId={chartId}
         />
-        {/* <div>Chart ID: {chartId}</div> */}
+        <p>Chart ID: {chartId}</p> {/* Render the chartId as a separate element */}
       </>
     );
 };
