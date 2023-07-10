@@ -58,3 +58,8 @@ transform: translateY(0); /* Reset the row's position */
   white-space: pre-line !important;
   word-wrap: break-word;
 }
+
+.popup-content {
+  height: 100%;
+  overflow: auto;
+}

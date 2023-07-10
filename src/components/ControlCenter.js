@@ -12,6 +12,9 @@ import { FaMinus } from 'react-icons/fa';
 import * as AiIcons from "react-icons/ai";
 import axios from 'axios';
 import Scroll from "../container/Scroll/Scroll";
+import ReactTable, { ReactTableDefaults } from "react-table";
+import Popup from 'reactjs-popup';
+import 'reactjs-popup/dist/index.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -62,8 +65,8 @@ const ControlCenter = ({ list }) => {
     const showControl = () => setControl(!control);
     const [stored, setStored] = useState({});
     const [selectedChartId, setSelectedChartId] = useState(null);
+    const [showTable, setShowTable] = useState(false);
     
-
     useEffect(() => {
         if (list && list.length > 0) {
             const ordersData = list;
@@ -220,6 +223,14 @@ const ControlCenter = ({ list }) => {
        
       };
 
+      const handleSelectTable = () => {
+        setShowTable(true);
+      };
+      
+      const handleHideTable = () => {
+        setShowTable(false);
+      };
+
       const handleRemoveChart = (chartId) => {
         setCharts((prevCharts) => prevCharts.filter((chart) => chart.chartId !== chartId));
         setStored((prevStored) => {
@@ -340,7 +351,7 @@ const ControlCenter = ({ list }) => {
                   ))}
                 </div>
               </> 
-            {selectedChartId === null && (
+            {dataProcessed && selectedChartId === null && (
             <button onClick={handleAddChartChange}>Add Chart</button>     
             )}
 
@@ -350,17 +361,31 @@ const ControlCenter = ({ list }) => {
           </div>
           )}
             
-            {selectedChartId !== null && (
+            {dataProcessed && selectedChartId !== null && (
                 <button onClick={handleUpdateChartChange}>Update Chart</button>
+            )}  
+          
+          <Popup
+            trigger={<button>Show Table</button>}
+            position="right center"
+            modal
+            nested
+            open={showTable}
+            onClose={handleHideTable}
+          >
+            {(close) => (
+              <div>             
+                <button onClick={close}>Close</button>               
+                <Table />
+                </div>                        
             )}
-
+          </Popup>  
+                
             </Scroll>
         </ControlWrap>
         </ControlNav>
-        
       </IconContext.Provider>
-      
-         
+        
           <ResponsiveGridLayout
             className="layout"
             layouts={{ layouts }} // Initial layout based on the 'lg' breakpoint
@@ -541,6 +566,57 @@ const Chart = ({
     );
 };
 
-export { ControlCenter, Chart };
+const Table = () => {
+
+  const [columns, setColumns] = useState([]);
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = () => {
+    axios
+    .post("http://localhost:5000/chartData")
+    .then(response => {
+      const tableData = response.data
+      createTable(tableData);
+      console.log('Received tableData:', tableData);
+    })
+    .catch(error => {
+      console.error("Error retrieving Table Data:", error);
+    });
+  }
+
+  const createTable = tableData => {
+    console.log("Received tableData:", tableData);
+    if (tableData && tableData.columns && tableData.data) {
+      setColumns(tableData.columns);
+      setData(tableData.data);
+    } else {
+        console.error("Invalid tableData format:", tableData);
+    }
+  };
+
+  return (
+    <div>
+    
+    <ReactTable
+      filterable
+      data={data}
+      columns={columns}
+      // column={columnDefaults}
+      style={{
+          height: "800px" // This will force the table body to overflow and scroll, since there is not enough room
+      }}
+      className="-striped -highlight pa3"
+    />
+  
+   
+    </div>
+  );
+};
+
+export { ControlCenter, Chart, Table };
 
 
