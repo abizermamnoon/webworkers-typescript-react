@@ -51,7 +51,6 @@ const ControlCenter = ({ list }) => {
     const [columnOptions, setColumnOptions] = useState([]);
     const [columnTypes, setColumnTypes] = useState([]);
     const [yAxisParams, setYAxisParams] = useState([]);
-    const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
     const [sortedData, setSortedData] = useState({});
@@ -187,7 +186,6 @@ const ControlCenter = ({ list }) => {
 
         setXAxisParam("");
         setYAxisParams([]);
-        setTitle("");
         setType("");
         setInterval("");
       };
@@ -201,7 +199,6 @@ const ControlCenter = ({ list }) => {
     
           setXAxisParam(xAxisParam);
           setYAxisParams(yAxisParams);
-          setTitle(title);
           setType(type);
           setInterval(interval);
         }
@@ -229,6 +226,15 @@ const ControlCenter = ({ list }) => {
       
       const handleHideTable = () => {
         setShowTable(false);
+      };
+
+      const handleResetChart = () => {
+        setXAxisParam("");
+        setYAxisParams([]);
+        setType("");
+        setInterval("");
+        setSelectedChartId(null)
+        setDataProcessed(false);
       };
 
       const handleRemoveChart = (chartId) => {
@@ -269,7 +275,6 @@ const ControlCenter = ({ list }) => {
 
         setXAxisParam("");
         setYAxisParams([]);
-        setTitle("");
         setType("");
         setInterval("");
         setSelectedChartId(null)
@@ -363,6 +368,10 @@ const ControlCenter = ({ list }) => {
             
             {dataProcessed && selectedChartId !== null && (
                 <button onClick={handleUpdateChartChange}>Update Chart</button>
+            )}  
+
+            { selectedChartId !== null && (
+                <button onClick={handleResetChart}>Reset</button>
             )}  
           
           <Popup
