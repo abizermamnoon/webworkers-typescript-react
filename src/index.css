@@ -23,8 +23,6 @@ body {
   flex-direction: column;
   flex-wrap: wrap;
   /* align-items: center; */
-  padding-left: 1rem;
-  padding-top: 1rem;
   width: 100%;
 }
 

@@ -6,6 +6,11 @@ import * as RiIcons from "react-icons/ri";
 
 export const SidebarData = [
   {
+    title: "Files",
+    path: "/",
+    icon: <AiIcons.AiFillHome />
+  },
+  {
     title: "Chart",
     path: "/chart",
     icon: <AiIcons.AiFillHome />

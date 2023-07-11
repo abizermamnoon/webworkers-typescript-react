@@ -7,15 +7,11 @@ import './index.css'
 import Sidebar from "./sidebar/Sidebar"
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Table from './Table.js'
+import UploadFile from './UploadFile'
 
 export const listPageSize = 10000;
 
 const App = () => {
-  const [file, setFile] = useState('');
-  const [columnTypes, setColumnTypes] = useState([]);
-  const [data, getFile] = useState({ name: "", path: "" });
-  const [progress, setProgess] = useState(0);
-  const el = useRef();
 
   const [lengthCount, setLengthCount] = useState({
     loading: true,
@@ -28,30 +24,8 @@ const App = () => {
     // totalPages: 0,
   });
 
-  const handleChange = (e) => {
-    setProgess(0)
-    const file = e.target.files[0]
-    console.log(file);
-    setFile(file)
-  }
-
-  const uploadFile = () => {
-      const formData = new FormData();
-      formData.append('file', file)
-      axios.post('http://localhost:5000/upload', formData, {
-          onUploadProgress: (ProgressEvent) => {
-              let progress = Math.round(ProgressEvent.loaded / ProgressEvent.total * 100) + '%';
-              setProgess(progress)
-          }
-      }).then(res => {
-          console.log(res);
-          getFile({ name: res.data.name, path: 'http://localhost:5000' + res.data.path })
-          // el.current.value = "";
-      }).catch(err => console.log(err))
-  }
-
   useEffect(() => {
-    if (data) {
+    
       const counter = new Worker(new URL("./longProcesses/count.js", import.meta.url));
       counter.postMessage(processList.count);
 
@@ -87,43 +61,22 @@ const App = () => {
         counter.terminate();
         getData.terminate();
       };
-    }
-  }, [data, profileList.page]);
+    
+  }, [profileList.page]);
 
   return (
     <main className="main-container">
     <div>
-      <div className="file-upload">
-        <input type="file" ref={el} onChange={handleChange} />
-        <div className="progressBar" style={{ width: progress }}>
-          {progress}
-        </div>
-        <button onClick={uploadFile} className="upbutton">upload</button>
-        <hr />
-        {data.path && <div><textarea value={data.path} onChange={uploadFile} /></div>}
-      </div>
-
       <div>
         <Router>
           <Sidebar />
           <Routes>
             <Route path='/chart' element={<ControlCenter list={profileList.list}/>} />
             <Route path='/table' element={<Table />} />
+            <Route path='/' element={<UploadFile />} />
           </Routes>
         </Router>
       </div>
-      {/* {data.path && <img src={data.path} alt={data.name} />} */}
-      {/* <section className="table-container">
-        {profileList.loading ? (
-          <Loader size={40} display="block" />
-        ) : (
-          <>
-            <div className="control-side">
-              <Table list={profileList.list} />
-            </div>
-          </>
-        )}
-      </section> */}
       
     </div>
   </main>
