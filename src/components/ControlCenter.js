@@ -53,8 +53,12 @@ const ControlCenter = ({ list }) => {
     const [yAxisParams, setYAxisParams] = useState([]);
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
+    const [showSeries, setShowSeries] = useState(false);
+    const [showStats, setShowStats] = useState(false);
     const [sortedData, setSortedData] = useState({});
     const [interval, setInterval] = useState("");
+    const [SummaryStat, setSummaryStat] = useState("");
+    const [resStat, setResStat] = useState({});
     const [chartId, setChartId] = useState(1);
     const [chartIdList, setChartIdList] = useState([1]);
     const [charts, setCharts] = useState([]);
@@ -65,6 +69,7 @@ const ControlCenter = ({ list }) => {
     const [stored, setStored] = useState({});
     const [selectedChartId, setSelectedChartId] = useState(null);
     const [showTable, setShowTable] = useState(false);
+    const [SeriesOption, setSeriesOption] = useState("");
     
     useEffect(() => {
         if (list && list.length > 0) {
@@ -126,6 +131,10 @@ const ControlCenter = ({ list }) => {
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
         };
+
+      const handleSeriesOptionChange = (value) => {
+        setSeriesOption(value);
+      };
     
       const handleYAxisChange = (value, index) => {
         if (yAxisParams[index] === value) {
@@ -155,48 +164,91 @@ const ControlCenter = ({ list }) => {
         setInterval(value);
       };
 
+      const handleStatChange = (value) => {
+        setSummaryStat(value);
+        if (value) {
+        axios
+        .post("http://localhost:5000/summarystat", { value,  SeriesOption })
+        .then(response => {
+          // Handle the response from the backend
+          console.log("Summary Stats:", response.data);
+          setResStat(response.data) 
+        })
+        .catch(error => {
+          console.error("Error retrieving Column Types:", error);
+        });
+      }
+      };
+
+      useEffect(() => {
+        console.log('result:', resStat);
+      }, [resStat]);
+
       // Function to handle layout change
       const handleLayoutChange = (newLayout) => {
         setLayouts((prevLayouts) => ({ ...prevLayouts, lg: newLayout }));
       };
 
       const handleAddChartChange = () => {
+        if (type !== 'table') {  
+          const newChart = {
+            chartId: chartId,
+            sortedData: sortedData,
+            xAxisParam: xAxisParam,
+            yAxisParam: yAxisParams,
+            type: type,
+          };
+          setStored((prevStored) => ({
+            ...prevStored,
+            [chartId]: {
+              xAxisParam: xAxisParam,
+              yAxisParams: yAxisParams,
+              type: type,
+              interval: interval,
+            },
+          }));
+          setXAxisParam("");
+          setYAxisParams([]);
+          setType("");
+          setInterval("");   
+          setCharts((prevCharts) => [...prevCharts, newChart]);
+          setChartId((prevId) => prevId + 1);
+          setChartIdList((prevList) => [...prevList, chartId + 1]);
+          setDataProcessed(false);
+      } else if ( type === 'table') {
         const newChart = {
           chartId: chartId,
-          sortedData: sortedData,
-          xAxisParam: xAxisParam,
-          yAxisParam: yAxisParams,
+          resStat: resStat,
+          SeriesOption: SeriesOption,
+          SummaryStat: SummaryStat,
           type: type,
         };
-    
-        setCharts((prevCharts) => [...prevCharts, newChart]);
-        setChartId((prevId) => prevId + 1);
-        setChartIdList((prevList) => [...prevList, chartId + 1]);
-        setDataProcessed(false);
-
         setStored((prevStored) => ({
           ...prevStored,
           [chartId]: {
-            xAxisParam: xAxisParam,
-            yAxisParams: yAxisParams,
+            SeriesOption: SeriesOption,
+            SummaryStat: SummaryStat,
             type: type,
-            interval: interval,
           },
         }));
-
-        setXAxisParam("");
-        setYAxisParams([]);
         setType("");
-        setInterval("");
+        setSeriesOption("")
+        setSummaryStat("")
+        setCharts((prevCharts) => [...prevCharts, newChart]);
+        setChartId((prevId) => prevId + 1);
+        setChartIdList((prevList) => [...prevList, chartId + 1]);
+      }    
       };
+
+      useEffect(() => {
+        console.log('charts:', charts);
+      }, [resStat]);
 
       const handleChartIdChange = (event) => {
         const selectedId = parseInt(event.target.value);
         setSelectedChartId(selectedId);
-    
-        if (stored[selectedId]) {
-          const { xAxisParam, yAxisParams, title, type, interval } = stored[selectedId];
-    
+        if (stored[selectedId] ) {
+          const { xAxisParam, yAxisParams, title, type, interval } = stored[selectedId];   
           setXAxisParam(xAxisParam);
           setYAxisParams(yAxisParams);
           setType(type);
@@ -204,18 +256,24 @@ const ControlCenter = ({ list }) => {
         }
       };
 
-      const handleTypeChange = (selectedType) => {
-        
-        setType(selectedType);
-    
+      const handleTypeChange = (selectedType) => {       
+        setType(selectedType);   
         if (selectedType === "line") {
           setShowxAxis(true);
+          setShowSeries(true);
+          setShowStats(false);
         } else if (selectedType === "bar") {
           setShowxAxis(true);
+          setShowSeries(true);
+          setShowStats(false);
         } else if (selectedType === "pie") {
           setShowxAxis(false);
+          setShowSeries(true);
+          setShowStats(false);
         } else {
           setShowxAxis(false);
+          setShowSeries(false)
+          setShowStats(true);
         }
        
       };
@@ -249,7 +307,7 @@ const ControlCenter = ({ list }) => {
 
       const handleUpdateChartChange = () => {
         
-        handleRemoveChart(selectedChartId)
+        handleRemoveChart(selectedChartId) 
         const newChart = {
           chartId: chartId,
           sortedData: sortedData,
@@ -278,7 +336,7 @@ const ControlCenter = ({ list }) => {
         setType("");
         setInterval("");
         setSelectedChartId(null)
-        
+
       };
 
       return (
@@ -292,9 +350,10 @@ const ControlCenter = ({ list }) => {
        </Nav>
        
        <ControlNav control={control}>
-          <ControlWrap> 
-          <Scroll>      
-              <AiIcons.AiOutlineClose onClick={showControl} style={{ position: "absolute", top: 0, right: 0 }}/>          
+        <ControlWrap> 
+        <Scroll>     
+        <AiIcons.AiOutlineClose onClick={showControl} style={{ position: "absolute", top: 0, right: 0 }}/>      
+  
         <label htmlFor="type">Chart Type</label>
           <div className="icon-container">
           <div className={`chart-icon ${type === "line" ? "active" : ""}`} onClick={() => handleTypeChange("line")}>
@@ -308,6 +367,10 @@ const ControlCenter = ({ list }) => {
           <div className={`chart-icon ${type === "pie" ? "active" : ""}`} onClick={() => handleTypeChange("pie")}>
           <input type="checkbox" checked={type === "pie"} onChange={() => handleTypeChange("pie")}/>
             Pie
+          </div>
+          <div className={`chart-icon ${type === "table" ? "active" : ""}`} onClick={() => handleTypeChange("table")}>
+          <input type="checkbox" checked={type === "table"} onChange={() => handleTypeChange("table")}/>
+            Table
           </div>
       </div>
     
@@ -324,6 +387,48 @@ const ControlCenter = ({ list }) => {
                 </div>
               </>
             )}
+
+            {showStats && (
+              <>
+                <label>Columns</label>
+                <div className="icon-container">
+                  {columnOptions.map((column, index) => (
+                    <div key={index} className={`chart-icon ${SeriesOption === column ? "active" : ""}`} onClick={() => handleSeriesOptionChange(column)}>
+                      <input type="checkbox" checked={SeriesOption === column} onChange={() => handleSeriesOptionChange(column)}/>
+                      {column} ({columnTypes[column]})
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+          {showStats && SeriesOption !== "" && ( 
+            <>
+            <label>Summary Stat:</label>
+            <div className="icon-container">
+            <div className={`chart-icon ${SummaryStat === "count" ? "active" : ""}`} onClick={() => handleStatChange("count")}>
+              <input type="checkbox" checked={SummaryStat === "count"} onChange={() => handleStatChange("count")}/>
+                Count
+            </div>
+            <div className={`chart-icon ${SummaryStat === "median" ? "active" : ""}`} onClick={() => handleStatChange("median")}>
+              <input type="checkbox" checked={SummaryStat === "median"} onChange={() => handleStatChange("median")}/>
+                Median
+            </div>
+            <div className={`chart-icon ${SummaryStat === "average" ? "active" : ""}`} onClick={() => handleStatChange("average")}>
+              <input type="checkbox" checked={SummaryStat === "average"} onChange={() => handleStatChange("average")}/>
+                Average
+            </div>
+            <div className={`chart-icon ${SummaryStat === "sum" ? "active" : ""}`} onClick={() => handleStatChange("sum")}>
+              <input type="checkbox" checked={SummaryStat === "sum"} onChange={() => handleStatChange("sum")}/>
+                Sum
+            </div>
+            <div className={`chart-icon ${SummaryStat === "unique" ? "active" : ""}`} onClick={() => handleStatChange("unique")}>
+              <input type="checkbox" checked={SummaryStat === "unique"} onChange={() => handleStatChange("unique")}/>
+                Unique Count
+            </div>
+            </div>
+          </>
+        )}
           
           {xAxisParam === "datetime" && (
             <>
@@ -344,7 +449,7 @@ const ControlCenter = ({ list }) => {
               </div>
             </>
           )}
-          
+          {showSeries && (
               <>
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
@@ -356,9 +461,9 @@ const ControlCenter = ({ list }) => {
                   ))}
                 </div>
               </> 
-            {dataProcessed && selectedChartId === null && (
-            <button onClick={handleAddChartChange}>Add Chart</button>     
             )}
+            
+            <button onClick={handleAddChartChange}>Add Chart</button>     
 
             {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
@@ -388,13 +493,13 @@ const ControlCenter = ({ list }) => {
                 <Table />
                 </div>                        
             )}
-          </Popup>  
-                
+          </Popup>         
             </Scroll>
+
         </ControlWrap>
         </ControlNav>
       </IconContext.Provider>
-        
+             
           <ResponsiveGridLayout
             className="layout"
             layouts={{ layouts }} // Initial layout based on the 'lg' breakpoint
@@ -403,35 +508,96 @@ const ControlCenter = ({ list }) => {
             rowHeight={100}
             width={1200} // Width of the grid container
             onLayoutChange={handleLayoutChange}
-            draggableHandle=".chart-wrapper" // Specify the handle element for dragging
+            // draggableHandle=".chart-wrapper" // Specify the handle element for dragging
             draggableCancel=".disable-drag"
           >
-          {charts.map((chart) => (
-            <div
-              key={chart.chartId}
-              className="chart-wrapper"
-              data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
-            >
-              <Chart
-                key={chart.chartId}
-                chartId={chart.chartId}
-                sortedData={chart.sortedData}
-                xAxisParam={chart.xAxisParam}
-                yAxisParam={chart.yAxisParam.filter(
-                  (param) => param !== undefined && columnTypes[param] === "int"
-                )}
-                title={chart.title}
-                type={chart.type}
-                onRemoveChart={handleRemoveChart}
-                onSelectChart={setSelectedChartId} 
-                onChartID={handleChartIdChange}           
-              />
-            </div>
-          ))}
-          
+          {charts.map((chart) => {
+            if (chart.type !== 'table') {
+              return (
+                <div
+                  key={chart.chartId}
+                  className="chart-border"
+                  data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
+                >
+                  <Chart
+                    key={chart.chartId}
+                    chartId={chart.chartId}
+                    sortedData={chart.sortedData}
+                    xAxisParam={chart.xAxisParam}
+                    yAxisParam={chart.yAxisParam.filter(
+                      (param) => param !== undefined && columnTypes[param] === "int"
+                    )}
+                    title={chart.title}
+                    type={chart.type}
+                    onRemoveChart={handleRemoveChart}
+                    onSelectChart={setSelectedChartId} 
+                    onChartID={handleChartIdChange}           
+                  />
+                </div>
+              );
+            } else {
+              return (
+                <div
+                  key={chart.chartId}
+                  className="chart-border"
+                  data-grid={{ w: 1.5, h: 1, x: 0, y: 0 }}
+                >
+                  <SummaryStatistic
+                    key={chart.chartId}
+                    chartId={chart.chartId}
+                    resStat={chart.resStat}
+                    SeriesOption={chart.SeriesOption}
+                    type={chart.type}
+                    SummaryStat={chart.SummaryStat}
+                  />
+                </div>
+              );
+            }
+          })}       
     </ResponsiveGridLayout>
     </div>
 )};
+
+const SummaryStatistic = ({
+  chartId,
+  resStat,
+  SeriesOption,
+  type,
+  SummaryStat,
+
+}) => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (SummaryStat) {
+        setIsReady(true);
+    }
+  }, [SeriesOption, SummaryStat, resStat]);
+
+  if (!isReady ) {
+    return null; // Don't render the chart if the necessary variables are not ready
+  }
+
+  return (
+        
+    <div>  
+      {Object.entries(resStat).map(([key, value]) => (
+            <div key={key} className="chart-wrapper">
+              <span
+                style={{
+                  fontWeight: "bold",
+                  textDecoration: "underline"
+                }}
+              >
+                {key}
+              </span>
+          <span style={{ fontSize: "1.2em" }}>{value}</span>
+        </div>
+      ))}
+    </div> 
+  );
+}
+
 
 const Chart = ({ 
   // generateChart,

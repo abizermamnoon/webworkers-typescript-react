@@ -13,8 +13,8 @@ const UploadFile = () => {
     const [progress, setProgess] = useState(0);
     const el = useRef();
     const [isTableReady, setIsTableReady] = useState(false);
-    const [hasNullValues, setHasNullValues] = useState(false);
-    const [selectedAction, setSelectedAction] = useState("drop");
+    const [selectedAction, setSelectedAction] = useState("");
+    const [ColNul, setColNul] = useState([]);
 
     const uploadFile = () => {
         const formData = new FormData();
@@ -61,13 +61,7 @@ const UploadFile = () => {
           setColumns(tableData.columns);
           setNulData(tableData.data);
           setIsTableReady(true); 
-
-          // Check for non-zero values in the 'count_nuls' column
-        const countNulsColumn = tableData.columns.find(column => column.accessor === 'count_nuls');
-        const countNulsValues = tableData.data.map(row => row[countNulsColumn.accessor]);
-        const hasNonZeroValues = countNulsValues.some(value => value !== 0);
-        setHasNullValues(hasNonZeroValues);
-
+          
         } else {
             console.error("Invalid tableData format:", tableData);
         }
@@ -114,7 +108,7 @@ const UploadFile = () => {
             {data.path && <div><textarea value={data.path} onChange={uploadFile} /></div>}
           </div>
 
-          {isTableReady ? (
+          {isTableReady && (
             <React.Fragment>
                 <ReactTable
                 filterable
@@ -125,20 +119,19 @@ const UploadFile = () => {
                 }}
                 className="-striped -highlight pa3"
                 />
-                {hasNullValues && (
+                {nuldata && nuldata.length > 0 && (
                 <div>
                     The dataframe has null values. Would you like to drop the NA values?
                         <select value={selectedAction} onChange={handleDropNa}>
+                            <option value=""></option>
                             <option value="drop">Drop NA</option>
-                            <option value="fill">Fill NA</option>
+                            <option value="next">next value</option>
+                            <option value="prev">previous value</option>
+                            <option value="interp">linear interpolation</option>   
                         </select>
                 </div>
                 )}
             </React.Fragment>
-            ) : (
-            <div className="center pa7 db row">
-                <Loader size={40} display="block" />
-            </div>
             )}
 
             <button onClick={handleLoadTable}>Load</button>
