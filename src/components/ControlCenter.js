@@ -96,7 +96,8 @@ const ControlCenter = ({ list }) => {
         }
       }, [list]);
     
-    useEffect(() => {   
+    useEffect(() => { 
+      if (type && type !== 'table') {  
       let timeoutId;
 
       const handleSortData = () => {
@@ -107,7 +108,7 @@ const ControlCenter = ({ list }) => {
       timeoutId = setTimeout(handleSortData, 3000);
 
       return () => clearTimeout(timeoutId);
-    }, [xAxisParam, yAxisParams, type, interval]);
+    }}, [xAxisParam, yAxisParams, type, interval]);
     
         const counter = new Worker(new URL("../longProcesses/sortDataWorker.js", import.meta.url));
         
@@ -124,6 +125,7 @@ const ControlCenter = ({ list }) => {
               setDataProcessed(true);
             }
           };
+  
         }, []);
 
         console.log('stored:', stored);
@@ -172,7 +174,8 @@ const ControlCenter = ({ list }) => {
         .then(response => {
           // Handle the response from the backend
           console.log("Summary Stats:", response.data);
-          setResStat(response.data) 
+          setResStat(response.data)
+          setDataProcessed(true)
         })
         .catch(error => {
           console.error("Error retrieving Column Types:", error);
@@ -237,6 +240,7 @@ const ControlCenter = ({ list }) => {
         setCharts((prevCharts) => [...prevCharts, newChart]);
         setChartId((prevId) => prevId + 1);
         setChartIdList((prevList) => [...prevList, chartId + 1]);
+        setDataProcessed(false);
       }    
       };
 
@@ -247,12 +251,17 @@ const ControlCenter = ({ list }) => {
       const handleChartIdChange = (event) => {
         const selectedId = parseInt(event.target.value);
         setSelectedChartId(selectedId);
-        if (stored[selectedId] ) {
+        if (stored[selectedId] && type !== 'table') {
           const { xAxisParam, yAxisParams, title, type, interval } = stored[selectedId];   
           setXAxisParam(xAxisParam);
           setYAxisParams(yAxisParams);
           setType(type);
           setInterval(interval);
+        } else if (stored[selectedId] && type === 'table') {
+          const { SeriesOption, SummaryStat, type } = stored[selectedId];
+          setSeriesOption(SeriesOption);
+          // setSummaryStat(SummaryStat);
+          setType(type);
         }
       };
 
@@ -287,12 +296,20 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleResetChart = () => {
-        setXAxisParam("");
-        setYAxisParams([]);
-        setType("");
-        setInterval("");
-        setSelectedChartId(null)
-        setDataProcessed(false);
+        if (type !== 'table') {
+          setXAxisParam("");
+          setYAxisParams([]);
+          setType("");
+          setInterval("");
+          setSelectedChartId(null)
+          setDataProcessed(false);
+        } else if (type === 'table') {
+          setType("");
+          setSeriesOption("")
+          setSummaryStat("")
+          setSelectedChartId(null)
+          setDataProcessed(false);
+        }
       };
 
       const handleRemoveChart = (chartId) => {
@@ -303,39 +320,75 @@ const ControlCenter = ({ list }) => {
           return updatedStored;
         });
         setChartIdList((prevList) => prevList.filter((id) => id !== chartId));
-      };
-
-      const handleUpdateChartChange = () => {
-        
-        handleRemoveChart(selectedChartId) 
-        const newChart = {
-          chartId: chartId,
-          sortedData: sortedData,
-          xAxisParam: xAxisParam,
-          yAxisParam: yAxisParams,
-          type: type,
-        };
-    
-        setCharts((prevCharts) => [...prevCharts, newChart]);
-        setChartId((prevId) => prevId + 1);
-        setChartIdList((prevList) => [...prevList, chartId + 1]);
-        setDataProcessed(false);
-
-        setStored((prevStored) => ({
-          ...prevStored,
-          [chartId]: {
-            xAxisParam: xAxisParam,
-            yAxisParams: yAxisParams,
-            type: type,
-            interval: interval,
-          },
-        }));
 
         setXAxisParam("");
         setYAxisParams([]);
         setType("");
         setInterval("");
+        setType("");
+        setSeriesOption("")
+        setSummaryStat("")
         setSelectedChartId(null)
+      };
+
+      const handleUpdateChartChange = () => {
+        
+        handleRemoveChart(selectedChartId)
+
+        if (type !== 'table') {
+          const newChart = {
+            chartId: chartId,
+            sortedData: sortedData,
+            xAxisParam: xAxisParam,
+            yAxisParam: yAxisParams,
+            type: type,
+          };
+      
+          setCharts((prevCharts) => [...prevCharts, newChart]);
+          setChartId((prevId) => prevId + 1);
+          setChartIdList((prevList) => [...prevList, chartId + 1]);
+          setDataProcessed(false);
+
+          setStored((prevStored) => ({
+            ...prevStored,
+            [chartId]: {
+              xAxisParam: xAxisParam,
+              yAxisParams: yAxisParams,
+              type: type,
+              interval: interval,
+            },
+          }));
+
+          setXAxisParam("");
+          setYAxisParams([]);
+          setType("");
+          setInterval("");
+          setSelectedChartId(null)
+        } else if (type === 'table') {
+          const newChart = {
+            chartId: chartId,
+            resStat: resStat,
+            SeriesOption: SeriesOption,
+            SummaryStat: SummaryStat,
+            type: type,
+          };
+          setStored((prevStored) => ({
+            ...prevStored,
+            [chartId]: {
+              SeriesOption: SeriesOption,
+              SummaryStat: SummaryStat,
+              type: type,
+            },
+          }));
+          setType("");
+          setSeriesOption("")
+          setSummaryStat("")
+          setCharts((prevCharts) => [...prevCharts, newChart]);
+          setChartId((prevId) => prevId + 1);
+          setChartIdList((prevList) => [...prevList, chartId + 1]);
+          setSelectedChartId(null)
+          setDataProcessed(false);
+        }
 
       };
 
@@ -462,8 +515,10 @@ const ControlCenter = ({ list }) => {
                 </div>
               </> 
             )}
-            
+
+            {dataProcessed && (
             <button onClick={handleAddChartChange}>Add Chart</button>     
+            )}
 
             {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
@@ -471,7 +526,7 @@ const ControlCenter = ({ list }) => {
           </div>
           )}
             
-            {dataProcessed && selectedChartId !== null && (
+            {selectedChartId !== null && (
                 <button onClick={handleUpdateChartChange}>Update Chart</button>
             )}  
 
@@ -479,6 +534,7 @@ const ControlCenter = ({ list }) => {
                 <button onClick={handleResetChart}>Reset</button>
             )}  
           
+          {type && type !== 'table' && (
           <Popup
             trigger={<button>Show Table</button>}
             position="right center"
@@ -493,7 +549,8 @@ const ControlCenter = ({ list }) => {
                 <Table />
                 </div>                        
             )}
-          </Popup>         
+          </Popup>
+          )}         
             </Scroll>
 
         </ControlWrap>
@@ -549,6 +606,9 @@ const ControlCenter = ({ list }) => {
                     SeriesOption={chart.SeriesOption}
                     type={chart.type}
                     SummaryStat={chart.SummaryStat}
+                    onRemoveChart={handleRemoveChart}
+                    onSelectChart={setSelectedChartId} 
+                    onChartID={handleChartIdChange}   
                   />
                 </div>
               );
@@ -564,6 +624,9 @@ const SummaryStatistic = ({
   SeriesOption,
   type,
   SummaryStat,
+  onRemoveChart,
+  onSelectChart,
+  onChartID,
 
 }) => {
   const [isReady, setIsReady] = useState(false);
@@ -574,13 +637,32 @@ const SummaryStatistic = ({
     }
   }, [SeriesOption, SummaryStat, resStat]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (onSelectChart && event.key === "Backspace") {
+        onRemoveChart(chartId);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [chartId, onRemoveChart, onSelectChart]);
+
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
   }
 
+  const handleSelectChart = () => {
+    onSelectChart(chartId);
+    onChartID({ target: { value: chartId } });
+  };
+
   return (
         
-    <div>  
+    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
       {Object.entries(resStat).map(([key, value]) => (
             <div key={key} className="chart-wrapper">
               <span

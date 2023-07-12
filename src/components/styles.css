@@ -65,6 +65,7 @@ transform: translateY(0); /* Reset the row's position */
   flex-wrap: wrap;
   text-align: center;
   justify-content: center;
+  gap: 10px;
 }
 
 .chart-border  {
