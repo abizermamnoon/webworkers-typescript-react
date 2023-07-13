@@ -65,20 +65,15 @@ const App = () => {
   }, [profileList.page]);
 
   return (
-    <main className="main-container">
-    <div>
-      <div>
-        <Router>
-          <Sidebar />
-          <Routes>
-            <Route path='/chart' element={<ControlCenter list={profileList.list}/>} />
-            <Route path='/table' element={<Table />} />
-            <Route path='/' element={<UploadFile />} />
-          </Routes>
-        </Router>
-      </div>
-      
-    </div>
+    <main className="main-container" >  
+      <Router>
+        <Sidebar />
+        <Routes>
+          <Route path='/chart' element={<ControlCenter list={profileList.list}/>} />
+          <Route path='/table' element={<Table />} />
+          <Route path='/' element={<UploadFile />} />
+        </Routes>
+      </Router>
   </main>
 );
         };

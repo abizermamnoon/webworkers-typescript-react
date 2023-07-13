@@ -12,6 +12,7 @@ const Nav = styled.div`
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  position: relative;
 `;
  
 const NavIcon = styled(Link)`
@@ -22,7 +23,7 @@ const NavIcon = styled(Link)`
   justify-content: flex-start;
   align-items: center;
   position: absolute;
-  top: 0;
+  top: 1;
   left: 1;
 `;
  

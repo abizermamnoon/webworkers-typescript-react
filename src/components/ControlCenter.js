@@ -15,16 +15,20 @@ import Scroll from "../container/Scroll/Scroll";
 import ReactTable, { ReactTableDefaults } from "react-table";
 import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
+import essos from '../themes/essos.js';
+import westeros from '../themes/westeros.js'
+import infographic from '../themes/infographic.js';
+import shine from '../themes/shine.js';
 
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Nav = styled.div`
   background: white;
-  height: 30px;
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: center;
+  
 `;
  
 const ControlNav = styled.nav`
@@ -65,7 +69,7 @@ const ControlCenter = ({ list }) => {
     const [charts, setCharts] = useState([]);
     const [dataProcessed, setDataProcessed] = useState(false);
     const [layouts, setLayouts] = useState({ lg: [] });
-    const [control, setControl] = useState(false);
+    const [control, setControl] = useState(true);
     const showControl = () => setControl(!control);
     const [stored, setStored] = useState({});
     const [selectedChartId, setSelectedChartId] = useState(null);
@@ -73,6 +77,8 @@ const ControlCenter = ({ list }) => {
     const [SeriesOption, setSeriesOption] = useState("");
     const [columns, setColumns] = useState([]);
     const [TabData, setTabData] = useState([]);
+    const [Theme, setTheme] = useState('');
+    const [ThemeChange, setThemeChange] = useState();
     
     useEffect(() => {
         if (list && list.length > 0) {
@@ -173,6 +179,24 @@ const ControlCenter = ({ list }) => {
           setDataProcessed(false)
         };
 
+      const handleThemeChange = (value) => {
+        setTheme(value)
+        if (value === 'essos') {
+          setThemeChange(essos)
+        } else if (value === 'westeros') {
+          setThemeChange(westeros)
+        } else if (value === 'infographic') {
+          setThemeChange(infographic)
+        } else if (value === 'shine') {
+          setThemeChange(shine)
+        }
+      };
+
+      useEffect(() => {
+        console.log('Theme:', Theme);
+        console.log('Theme Change:', ThemeChange);
+      }, [Theme, ThemeChange]);
+
       const handleSeriesOptionChange = (value) => {
         setSeriesOption(value);
         setDataProcessed(false)
@@ -191,7 +215,7 @@ const ControlCenter = ({ list }) => {
           const updatedParams = [...prevParams];
           if (value !== undefined && columnTypes[value] === 'int' && (type !== 'pie')) {
             updatedParams[index] = value;
-          } else if (value !== undefined && type === 'pie' || value !== undefined && type === 'chartable') { 
+          } else if (value !== undefined && type === 'pie' || value !== undefined && type === 'chartable' || value !== undefined && type === 'donut') { 
             updatedParams[index] = value 
           } else {
             // Show error message when the selected series column is not of type "int"
@@ -243,6 +267,7 @@ const ControlCenter = ({ list }) => {
             yAxisParam: yAxisParams,
             type: type,
             interval: interval,
+            theme: ThemeChange,
           };
           setStored((prevStored) => ({
             ...prevStored,
@@ -251,6 +276,7 @@ const ControlCenter = ({ list }) => {
               yAxisParams: yAxisParams,
               type: type,
               interval: interval,
+              theme: Theme,
             },
           }));
           setXAxisParam("");
@@ -261,6 +287,8 @@ const ControlCenter = ({ list }) => {
           setChartId((prevId) => prevId + 1);
           setChartIdList((prevList) => [...prevList, chartId + 1]);
           setDataProcessed(false);
+          setTheme('');
+          setThemeChange();
       } else if (type === 'table') {
         const newChart = {
           chartId: chartId,
@@ -322,11 +350,13 @@ const ControlCenter = ({ list }) => {
         const selectedId = parseInt(event.target.value);
         setSelectedChartId(selectedId);
         if (stored[selectedId] && type !== 'table') {
-          const { xAxisParam, yAxisParams, type, interval } = stored[selectedId];   
+          const { xAxisParam, yAxisParams, type, interval, theme } = stored[selectedId];   
           setXAxisParam(xAxisParam ?? '');
           setYAxisParams(yAxisParams ?? []);
           setType(type ?? '');
           setInterval(interval ?? '');
+          setTheme(theme)
+
         } else if (stored[selectedId] && type === 'table') {
           const { SeriesOption, type } = stored[selectedId];
           setSeriesOption(SeriesOption ?? '');
@@ -337,15 +367,11 @@ const ControlCenter = ({ list }) => {
       const handleTypeChange = (selectedType) => {       
         setType(selectedType);   
         setDataProcessed(false)
-        if (selectedType === "line") {
+        if (selectedType === "line" || selectedType === "scatter" || selectedType === "bar") {
           setShowxAxis(true);
           setShowSeries(true);
           setShowStats(false);
-        } else if (selectedType === "bar") {
-          setShowxAxis(true);
-          setShowSeries(true);
-          setShowStats(false);
-        } else if (selectedType === "pie") {
+        } else if (selectedType === "pie" || selectedType === "donut") {
           setShowxAxis(false);
           setShowSeries(true);
           setShowStats(false);
@@ -370,6 +396,7 @@ const ControlCenter = ({ list }) => {
           setInterval("");
           setSelectedChartId(null)
           setDataProcessed(false);
+          setTheme('');
         } else if (type === 'table') {
           setType("");
           setSeriesOption("")
@@ -411,14 +438,13 @@ const ControlCenter = ({ list }) => {
       };
 
       return (
-        <div className='box-container'>
+        <>
+          <Nav>
+            <button onClick={showControl}>Control Center</button>  
+          </Nav>
+        <div className='box-container' >
         
         <IconContext.Provider value={{ color: "black" }}>
-        <Nav>
-          
-            <FaIcons.FaBars onClick={showControl} />
-          
-       </Nav>
        
        <ControlNav control={control}>
         <ControlWrap> 
@@ -438,6 +464,14 @@ const ControlCenter = ({ list }) => {
           <div className={`chart-icon ${type === "pie" ? "active" : ""}`} onClick={() => handleTypeChange("pie")}>
           <input type="checkbox" checked={type === "pie"} onChange={() => handleTypeChange("pie")}/>
             Pie
+          </div>
+          <div className={`chart-icon ${type === "scatter" ? "active" : ""}`} onClick={() => handleTypeChange("scatter")}>
+          <input type="checkbox" checked={type === "scatter"} onChange={() => handleTypeChange("scatter")}/>
+            Scatter
+          </div>
+          <div className={`chart-icon ${type === "donut" ? "active" : ""}`} onClick={() => handleTypeChange("donut")}>
+          <input type="checkbox" checked={type === "donut"} onChange={() => handleTypeChange("donut")}/>
+            Doughnut
           </div>
           <div className={`chart-icon ${type === "table" ? "active" : ""}`} onClick={() => handleTypeChange("table")}>
           <input type="checkbox" checked={type === "table"} onChange={() => handleTypeChange("table")}/>
@@ -529,19 +563,37 @@ const ControlCenter = ({ list }) => {
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie' || yAxisParams[index] === column && type === 'chartable') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
-                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'chartable')} onChange={() => handleYAxisChange(column, index)} />
+                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie' || yAxisParams[index] === column && type === 'chartable' || yAxisParams[index] === column && type === 'donut') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'chartable' || yAxisParams[index] === column && type === 'donut')} onChange={() => handleYAxisChange(column, index)} />
                       {column} ({columnTypes[column]})
                     </div>
                   ))}
                 </div>
               </> 
-            )}
+          )}
 
-            
+          <label htmlFor="type">Theme</label>
+          <div className="icon-container">
+            <div className={`chart-icon ${Theme === "essos" ? "active" : ""}`} onClick={() => handleThemeChange("essos")}>
+              <input type="checkbox" checked={Theme === "essos"} onChange={() => handleThemeChange("essos")}/>
+              Essos 
+            </div>
+            <div className={`chart-icon ${Theme === "westeros" ? "active" : ""}`} onClick={() => handleThemeChange("westeros")}>
+              <input type="checkbox" checked={Theme === "westeros"} onChange={() => handleThemeChange("westeros")}/>
+              Westeros 
+            </div>
+            <div className={`chart-icon ${Theme === "infographic" ? "active" : ""}`} onClick={() => handleThemeChange("infographic")}>
+              <input type="checkbox" checked={Theme === "infographic"} onChange={() => handleThemeChange("infographic")}/>
+              infographic 
+            </div>
+            <div className={`chart-icon ${Theme === "shine" ? "active" : ""}`} onClick={() => handleThemeChange("shine")}>
+              <input type="checkbox" checked={Theme === "shine"} onChange={() => handleThemeChange("shine")}/>
+              Shine 
+            </div>
+          </div>
+   
             <button onClick={handleAddChartChange}>Add Chart</button>     
            
-
             {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
             Data processed...
@@ -557,7 +609,6 @@ const ControlCenter = ({ list }) => {
             )}  
           
             </Scroll>
-
         </ControlWrap>
         </ControlNav>
       </IconContext.Provider>
@@ -591,6 +642,7 @@ const ControlCenter = ({ list }) => {
                     )}
                     title={chart.title}
                     type={chart.type}
+                    theme={chart.theme}
                     onRemoveChart={handleRemoveChart}
                     onSelectChart={setSelectedChartId} 
                     onChartID={handleChartIdChange}           
@@ -647,6 +699,7 @@ const ControlCenter = ({ list }) => {
         })}     
     </ResponsiveGridLayout>
     </div>
+    </>
 )};
 
 const SummaryStatistic = ({
@@ -721,6 +774,7 @@ const Chart = ({
   onRemoveChart,
   onSelectChart,
   onChartID,
+  theme,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
@@ -761,14 +815,14 @@ const Chart = ({
   
     const xAxisData = sortedData.xAxisData;
     const yAxisData = sortedData.yAxisData;
-    console.log('xAxisData:', xAxisData)
-    console.log('yAxisData:', yAxisData)
     
-  
+    console.log('Theme:', theme)
+    console.log('xAxisParam:', xAxisParam)
+    
     let series = [];
     let legendData = [];
   
-    if (type === "pie") {
+    if (type === "pie" || type === "donut") {
       series = [
         {
           data: yAxisData.map((data, index) => ({
@@ -776,7 +830,7 @@ const Chart = ({
             value: yAxisData[index],
           })),
           type: "pie",
-          radius: "50%", // Set the radius of the pie chart
+          radius: type === 'pie' ? "50%" : ['40%', '70%'], // Set the radius of the pie chart
           label: {
             show: true,
             formatter: '{b} :{d}%',
@@ -810,7 +864,7 @@ const Chart = ({
   
     return {
       legend: {
-        show: type === "pie" ? false : true,
+        show: type === "pie" || type === 'donut' ? false : true,
       },
       tooltip: {
         show: type === "pie" ? true : false,
@@ -820,7 +874,7 @@ const Chart = ({
       xAxis: {
         silent: true,
         triggerEvent: false,
-        show: type === "pie" ? false : true,
+        show: type === "pie" || type === 'donut' ? false : true,
         type: "category",
         data: type === "pie" ? [] : xAxisData,
         axisTick: {
@@ -844,6 +898,7 @@ const Chart = ({
           option={getOptions()} 
           style={{ height: "100%", width: "100%" }} 
           chartId={chartId}
+          theme={theme}
         />
 
       </div>
