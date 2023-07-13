@@ -16,6 +16,7 @@ import ReactTable, { ReactTableDefaults } from "react-table";
 import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
 
+
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Nav = styled.div`
@@ -107,7 +108,7 @@ const ControlCenter = ({ list }) => {
         clearTimeout(timeoutId);
       };
 
-      timeoutId = setTimeout(handleSortData, 3000);
+      timeoutId = setTimeout(handleSortData, 100);
 
       return () => clearTimeout(timeoutId);
     }}, [xAxisParam, yAxisParams, type, interval]);
@@ -149,6 +150,7 @@ const ControlCenter = ({ list }) => {
           const tableData = response.data
           createTable(tableData);
           console.log('Received tableData:', tableData);
+          setDataProcessed(true)
         })
         .catch(error => {
           console.error("Error retrieving Table Data:", error);
@@ -168,10 +170,12 @@ const ControlCenter = ({ list }) => {
         
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
+          setDataProcessed(false)
         };
 
       const handleSeriesOptionChange = (value) => {
         setSeriesOption(value);
+        setDataProcessed(false)
       };
     
       const handleYAxisChange = (value, index) => {
@@ -196,10 +200,12 @@ const ControlCenter = ({ list }) => {
           return updatedParams //.filter((param) => param !== undefined);
         });
       }
+      setDataProcessed(false)
       };
     
       const handleIntervalChange = (value) => {
         setInterval(value);
+        setDataProcessed(false)
       };
 
       const handleStatChange = (value) => {
@@ -267,7 +273,6 @@ const ControlCenter = ({ list }) => {
           ...prevStored,
           [chartId]: {
             SeriesOption: SeriesOption,
-            SummaryStat: SummaryStat,
             type: type,
           },
         }));
@@ -295,8 +300,7 @@ const ControlCenter = ({ list }) => {
               yAxisParams: yAxisParams,
               type: type,
               interval: interval,
-              TabData: TabData,
-              columns: columns,
+              
             },
           }));
           setXAxisParam("");
@@ -318,21 +322,21 @@ const ControlCenter = ({ list }) => {
         const selectedId = parseInt(event.target.value);
         setSelectedChartId(selectedId);
         if (stored[selectedId] && type !== 'table') {
-          const { xAxisParam, yAxisParams, title, type, interval } = stored[selectedId];   
-          setXAxisParam(xAxisParam);
-          setYAxisParams(yAxisParams);
-          setType(type);
-          setInterval(interval);
+          const { xAxisParam, yAxisParams, type, interval } = stored[selectedId];   
+          setXAxisParam(xAxisParam ?? '');
+          setYAxisParams(yAxisParams ?? []);
+          setType(type ?? '');
+          setInterval(interval ?? '');
         } else if (stored[selectedId] && type === 'table') {
-          const { SeriesOption, SummaryStat, type } = stored[selectedId];
-          setSeriesOption(SeriesOption);
-          // setSummaryStat(SummaryStat);
-          setType(type);
-        }
+          const { SeriesOption, type } = stored[selectedId];
+          setSeriesOption(SeriesOption ?? '');
+          setType(type ?? '');
+        } 
       };
 
       const handleTypeChange = (selectedType) => {       
         setType(selectedType);   
+        setDataProcessed(false)
         if (selectedType === "line") {
           setShowxAxis(true);
           setShowSeries(true);
@@ -345,6 +349,10 @@ const ControlCenter = ({ list }) => {
           setShowxAxis(false);
           setShowSeries(true);
           setShowStats(false);
+        } else if (selectedType === "table") {
+          setShowxAxis(false);
+          setShowSeries(false);
+          setShowStats(true);
         } else if (selectedType === "chartable") {
           setShowxAxis(true);
           setShowSeries(true)
@@ -376,82 +384,29 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleRemoveChart = (chartId) => {
-        setCharts((prevCharts) => prevCharts.filter((chart) => chart.chartId !== chartId));
+        setCharts((prevCharts) => prevCharts.filter((chart) => chart.chartId !== selectedChartId));
         setStored((prevStored) => {
           const updatedStored = { ...prevStored };
-          delete updatedStored[chartId];
+          delete updatedStored[selectedChartId];
           return updatedStored;
         });
-        setChartIdList((prevList) => prevList.filter((id) => id !== chartId));
+        setChartIdList((prevList) => prevList.filter((id) => id !== selectedChartId));
 
         setXAxisParam("");
         setYAxisParams([]);
         setType("");
         setInterval("");
-        setType("");
         setSeriesOption("")
         setSummaryStat("")
         setSelectedChartId(null)
+        setDataProcessed(false)
       };
 
       const handleUpdateChartChange = () => {
         
         handleRemoveChart(selectedChartId)
 
-        if (type !== 'table') {
-          const newChart = {
-            chartId: chartId,
-            sortedData: sortedData,
-            xAxisParam: xAxisParam,
-            yAxisParam: yAxisParams,
-            type: type,
-          };
-      
-          setCharts((prevCharts) => [...prevCharts, newChart]);
-          setChartId((prevId) => prevId + 1);
-          setChartIdList((prevList) => [...prevList, chartId + 1]);
-          setDataProcessed(false);
-
-          setStored((prevStored) => ({
-            ...prevStored,
-            [chartId]: {
-              xAxisParam: xAxisParam,
-              yAxisParams: yAxisParams,
-              type: type,
-              interval: interval,
-            },
-          }));
-
-          setXAxisParam("");
-          setYAxisParams([]);
-          setType("");
-          setInterval("");
-          setSelectedChartId(null)
-        } else if (type === 'table') {
-          const newChart = {
-            chartId: chartId,
-            resStat: resStat,
-            SeriesOption: SeriesOption,
-            SummaryStat: SummaryStat,
-            type: type,
-          };
-          setStored((prevStored) => ({
-            ...prevStored,
-            [chartId]: {
-              SeriesOption: SeriesOption,
-              SummaryStat: SummaryStat,
-              type: type,
-            },
-          }));
-          setType("");
-          setSeriesOption("")
-          setSummaryStat("")
-          setCharts((prevCharts) => [...prevCharts, newChart]);
-          setChartId((prevId) => prevId + 1);
-          setChartIdList((prevList) => [...prevList, chartId + 1]);
-          setSelectedChartId(null)
-          setDataProcessed(false);
-        }
+        handleAddChartChange()
 
       };
 
@@ -486,7 +441,7 @@ const ControlCenter = ({ list }) => {
           </div>
           <div className={`chart-icon ${type === "table" ? "active" : ""}`} onClick={() => handleTypeChange("table")}>
           <input type="checkbox" checked={type === "table"} onChange={() => handleTypeChange("table")}/>
-            Table
+            Card
           </div>
           <div className={`chart-icon ${type === "chartable" ? "active" : ""}`} onClick={() => handleTypeChange("chartable")}>
           <input type="checkbox" checked={type === "chartable"} onChange={() => handleTypeChange("chartable")}/>
@@ -569,7 +524,7 @@ const ControlCenter = ({ list }) => {
               </div>
             </>
           )}
-          {showSeries && (
+          {showSeries && columnOptions && (
               <>
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
@@ -601,23 +556,6 @@ const ControlCenter = ({ list }) => {
                 <button onClick={handleResetChart}>Reset</button>
             )}  
           
-          {/* { type !== 'table' && (
-          <Popup
-            // trigger={<button>Show Table</button>}
-            position="right center"
-            modal
-            nested
-            open={showTable}
-            onClose={handleHideTable}
-          >
-            {(close) => (
-              <div>             
-                <button onClick={close}>Close</button>               
-                <Table />
-                </div>                        
-            )}
-          </Popup>
-          )}          */}
             </Scroll>
 
         </ControlWrap>
@@ -684,19 +622,23 @@ const ControlCenter = ({ list }) => {
                 <div
                   key={chart.chartId}
                   className="chart-border"
-                  data-grid={{ w: 6, h: 4, x: 0, y: 0 }}
+                  data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
                 >
                   <Scroll>
-                    <ReactTable
-                      filterable
-                      data={TabData}
-                      columns={columns}
-                      defaultPageSize={100} // Set the default page size to 100 rows
-                      showPagination={false} // Hide the pagination
-                      style={{
-                          height: "100%" // This will force the table body to overflow and scroll, since there is not enough room
-                      }}
-                      className="-striped -highlight pa3"
+                    <Table
+                      key={chart.chartId}
+                      chartId={chart.chartId}
+                      TabData={chart.TabData}
+                      xAxisParam={chart.xAxisParam}
+                      yAxisParam={chart.yAxisParam.filter(
+                        (param) => param !== undefined && columnTypes[param] === "int"
+                      )}
+                      columns={chart.columns}
+                      type={chart.type}
+                      interval={chart.interval}
+                      onRemoveChart={handleRemoveChart}
+                      onSelectChart={setSelectedChartId} 
+                      onChartID={handleChartIdChange}
                     />
                   </Scroll>
               </div>
@@ -803,7 +745,6 @@ const Chart = ({
     };
   }, [chartId, onRemoveChart, onSelectChart]);
 
-
   if (!isReady ) {
       return null; // Don't render the chart if the necessary variables are not ready
   }
@@ -822,7 +763,7 @@ const Chart = ({
     const yAxisData = sortedData.yAxisData;
     console.log('xAxisData:', xAxisData)
     console.log('yAxisData:', yAxisData)
-    console.log('yAxisParam:', yAxisParam)
+    
   
     let series = [];
     let legendData = [];
@@ -916,9 +857,13 @@ const Table = ({
   chartId,
   TabData,
   columns,
+  onRemoveChart,
+  onSelectChart,
+  onChartID,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
+  const [selectedChartId, setSelectedChartId] = useState(null);
 
   useEffect(() => {
       if (TabData && columns) {
@@ -926,13 +871,33 @@ const Table = ({
       }
   }, [TabData, columns]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (onSelectChart && event.key === "Backspace") {
+        onRemoveChart(chartId);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [chartId, onRemoveChart, onSelectChart]);
+
+  
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
   }
 
+  const handleSelectChart = () => {
+    setSelectedChartId(chartId);
+    onSelectChart(chartId);
+    onChartID({ target: { value: chartId } });
+  };
+
   return (
-    <div>
-      <Scroll>
+    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
         <ReactTable
           filterable
           data={TabData}
@@ -942,10 +907,17 @@ const Table = ({
           style={{
               height: "400px" // This will force the table body to overflow and scroll, since there is not enough room
           }}
-          className="-striped -highlight pa3"
+          // className="-striped -highlight pa3"
+          getTdProps={(state, rowInfo, column, instance) => {
+            return {
+              style: {
+                fontSize: '12px' // Adjust the font size here
+              }
+            };
+          }}
         />
-      </Scroll>
     </div>
+
   );
 };
 

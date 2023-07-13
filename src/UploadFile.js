@@ -15,6 +15,9 @@ const UploadFile = () => {
     const [isTableReady, setIsTableReady] = useState(false);
     const [selectedAction, setSelectedAction] = useState("");
     const [ColNul, setColNul] = useState([]);
+    const [DropNa, setDropNa] = useState('');
+    const [LoadData, setLoadData] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const uploadFile = () => {
         const formData = new FormData();
@@ -26,6 +29,7 @@ const UploadFile = () => {
             }
         }).then(res => {
             console.log(res);
+            setIsTableReady(false)
             getFile({ name: res.data.name, path: 'http://localhost:5000' + res.data.path })
             // el.current.value = "";
         }).catch(err => console.log(err))
@@ -38,9 +42,9 @@ const UploadFile = () => {
         setFile(file)
     }
 
-    useEffect(() => {
-        fetchData();
-      }, []);
+    useEffect(() => {  
+        fetchData();   
+      }, [data]);
 
     const fetchData = () => {
     axios
@@ -68,16 +72,20 @@ const UploadFile = () => {
     };
 
     const handleLoadTable = () => {
+        setIsLoading(true);
         // Send POST request to Flask backend
         axios
         .post("http://localhost:5000/loadTable")
         .then(response => {
             // Handle the response from the backend
             console.log("Data_Loaded:", response.data);
+            setLoadData(true)
+            setIsLoading(false);
             // Update the state with the received groups if necessary
         })
         .catch(error => {
             console.error("Error loading data:", error);
+            setIsLoading(false);
         });
     };
 
@@ -89,6 +97,7 @@ const UploadFile = () => {
         .then(response => {
             // Handle the response from the backend
             console.log("Data Frame:", response.data);
+            setDropNa(response.data)
             // Update the state with the received groups if necessary
         })
         .catch(error => {
@@ -108,7 +117,7 @@ const UploadFile = () => {
             {data.path && <div><textarea value={data.path} onChange={uploadFile} /></div>}
           </div>
 
-          {isTableReady && (
+          {isTableReady ? (
             <React.Fragment>
                 <ReactTable
                 filterable
@@ -129,12 +138,27 @@ const UploadFile = () => {
                             <option value="prev">previous value</option>
                             <option value="interp">linear interpolation</option>   
                         </select>
+                        {DropNa && (
+                            <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
+                                {JSON.stringify(DropNa)}
+                            </div>
+                        )}
                 </div>
                 )}
             </React.Fragment>
+            ) : (
+                <div className="center pa7 db row">
+                    <Loader size={40} display="block" />
+                </div>
             )}
 
-            <button onClick={handleLoadTable}>Load</button>
+            <button onClick={handleLoadTable}>{isLoading ? 'Loading...' : 'Load'}</button>
+
+            {LoadData && (
+                <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
+                    Data has been loaded
+                </div>
+            )}
         </div>
     );
 };
