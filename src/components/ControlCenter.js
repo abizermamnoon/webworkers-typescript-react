@@ -70,6 +70,8 @@ const ControlCenter = ({ list }) => {
     const [selectedChartId, setSelectedChartId] = useState(null);
     const [showTable, setShowTable] = useState(false);
     const [SeriesOption, setSeriesOption] = useState("");
+    const [columns, setColumns] = useState([]);
+    const [TabData, setTabData] = useState([]);
     
     useEffect(() => {
         if (list && list.length > 0) {
@@ -129,6 +131,40 @@ const ControlCenter = ({ list }) => {
         }, []);
 
         console.log('stored:', stored);
+    
+        useEffect(() => {
+          if (Object.keys(sortedData).length !== 0) {
+            fetchData();
+          }
+        }, [sortedData]);
+    
+      const fetchData = () => {
+        axios
+        .post("http://localhost:5000/chartData", {
+          xAxisParam,
+          yAxisParams,
+          type
+        })
+        .then(response => {
+          const tableData = response.data
+          createTable(tableData);
+          console.log('Received tableData:', tableData);
+        })
+        .catch(error => {
+          console.error("Error retrieving Table Data:", error);
+        });
+      }
+
+      const createTable = tableData => {
+        console.log("Received tableData:", tableData);
+        if (tableData && tableData.columns && tableData.data) {
+          setColumns(tableData.columns);
+          setTabData(tableData.data);
+          console.log('Table has been created');
+        } else {
+          console.error("Invalid tableData format:", tableData);
+        }
+      };
         
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
@@ -151,7 +187,7 @@ const ControlCenter = ({ list }) => {
           const updatedParams = [...prevParams];
           if (value !== undefined && columnTypes[value] === 'int' && (type !== 'pie')) {
             updatedParams[index] = value;
-          } else if (value !== undefined && type === 'pie') { 
+          } else if (value !== undefined && type === 'pie' || value !== undefined && type === 'chartable') { 
             updatedParams[index] = value 
           } else {
             // Show error message when the selected series column is not of type "int"
@@ -193,13 +229,14 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleAddChartChange = () => {
-        if (type !== 'table') {  
+        if (type !== 'table' && type !== 'chartable') {  
           const newChart = {
             chartId: chartId,
             sortedData: sortedData,
             xAxisParam: xAxisParam,
             yAxisParam: yAxisParams,
             type: type,
+            interval: interval,
           };
           setStored((prevStored) => ({
             ...prevStored,
@@ -218,7 +255,7 @@ const ControlCenter = ({ list }) => {
           setChartId((prevId) => prevId + 1);
           setChartIdList((prevList) => [...prevList, chartId + 1]);
           setDataProcessed(false);
-      } else if ( type === 'table') {
+      } else if (type === 'table') {
         const newChart = {
           chartId: chartId,
           resStat: resStat,
@@ -241,7 +278,36 @@ const ControlCenter = ({ list }) => {
         setChartId((prevId) => prevId + 1);
         setChartIdList((prevList) => [...prevList, chartId + 1]);
         setDataProcessed(false);
-      }    
+      } else if (type === 'chartable') {
+          const newChart = {
+            chartId: chartId,
+            TabData: TabData,
+            columns: columns,
+            xAxisParam: xAxisParam,
+            yAxisParam: yAxisParams,
+            type: type,
+            interval: interval,
+          };
+          setStored((prevStored) => ({
+            ...prevStored,
+            [chartId]: {
+              xAxisParam: xAxisParam,
+              yAxisParams: yAxisParams,
+              type: type,
+              interval: interval,
+              TabData: TabData,
+              columns: columns,
+            },
+          }));
+          setXAxisParam("");
+          setYAxisParams([]);
+          setType("");
+          setInterval("");   
+          setCharts((prevCharts) => [...prevCharts, newChart]);
+          setChartId((prevId) => prevId + 1);
+          setChartIdList((prevList) => [...prevList, chartId + 1]);
+          setDataProcessed(false);
+      }
       };
 
       useEffect(() => {
@@ -279,20 +345,13 @@ const ControlCenter = ({ list }) => {
           setShowxAxis(false);
           setShowSeries(true);
           setShowStats(false);
-        } else {
-          setShowxAxis(false);
-          setShowSeries(false)
-          setShowStats(true);
+        } else if (selectedType === "chartable") {
+          setShowxAxis(true);
+          setShowSeries(true)
+          setShowStats(false);
+          setShowTable(true)
         }
        
-      };
-
-      const handleSelectTable = () => {
-        setShowTable(true);
-      };
-      
-      const handleHideTable = () => {
-        setShowTable(false);
       };
 
       const handleResetChart = () => {
@@ -310,6 +369,10 @@ const ControlCenter = ({ list }) => {
           setSelectedChartId(null)
           setDataProcessed(false);
         }
+      };
+
+      const handleHideTable = () => {
+        setShowTable(false);
       };
 
       const handleRemoveChart = (chartId) => {
@@ -425,6 +488,10 @@ const ControlCenter = ({ list }) => {
           <input type="checkbox" checked={type === "table"} onChange={() => handleTypeChange("table")}/>
             Table
           </div>
+          <div className={`chart-icon ${type === "chartable" ? "active" : ""}`} onClick={() => handleTypeChange("chartable")}>
+          <input type="checkbox" checked={type === "chartable"} onChange={() => handleTypeChange("chartable")}/>
+            Chart Table
+          </div>
       </div>
     
             {showxAxis && (
@@ -507,8 +574,8 @@ const ControlCenter = ({ list }) => {
                 <label htmlFor="yAxisParams">Series</label>
                 <div className="icon-container">
                   {columnOptions.map((column, index) => (
-                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
-                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie'))} onChange={() => handleYAxisChange(column, index)} />
+                    <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie' || yAxisParams[index] === column && type === 'chartable') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
+                      <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'chartable')} onChange={() => handleYAxisChange(column, index)} />
                       {column} ({columnTypes[column]})
                     </div>
                   ))}
@@ -516,9 +583,9 @@ const ControlCenter = ({ list }) => {
               </> 
             )}
 
-            {dataProcessed && (
+            
             <button onClick={handleAddChartChange}>Add Chart</button>     
-            )}
+           
 
             {dataProcessed && (
           <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
@@ -534,9 +601,9 @@ const ControlCenter = ({ list }) => {
                 <button onClick={handleResetChart}>Reset</button>
             )}  
           
-          {type && type !== 'table' && (
+          {/* { type !== 'table' && (
           <Popup
-            trigger={<button>Show Table</button>}
+            // trigger={<button>Show Table</button>}
             position="right center"
             modal
             nested
@@ -550,7 +617,7 @@ const ControlCenter = ({ list }) => {
                 </div>                        
             )}
           </Popup>
-          )}         
+          )}          */}
             </Scroll>
 
         </ControlWrap>
@@ -569,7 +636,7 @@ const ControlCenter = ({ list }) => {
             draggableCancel=".disable-drag"
           >
           {charts.map((chart) => {
-            if (chart.type !== 'table') {
+            if (chart.type !== 'table' && chart.type !== 'chartable') {
               return (
                 <div
                   key={chart.chartId}
@@ -592,7 +659,7 @@ const ControlCenter = ({ list }) => {
                   />
                 </div>
               );
-            } else {
+            } else if (chart.type === 'table') {
               return (
                 <div
                   key={chart.chartId}
@@ -612,8 +679,30 @@ const ControlCenter = ({ list }) => {
                   />
                 </div>
               );
-            }
-          })}       
+            } else if (chart.type === 'chartable') {
+              return (
+                <div
+                  key={chart.chartId}
+                  className="chart-border"
+                  data-grid={{ w: 6, h: 4, x: 0, y: 0 }}
+                >
+                  <Scroll>
+                    <ReactTable
+                      filterable
+                      data={TabData}
+                      columns={columns}
+                      defaultPageSize={100} // Set the default page size to 100 rows
+                      showPagination={false} // Hide the pagination
+                      style={{
+                          height: "100%" // This will force the table body to overflow and scroll, since there is not enough room
+                      }}
+                      className="-striped -highlight pa3"
+                    />
+                  </Scroll>
+              </div>
+            )
+          }
+        })}     
     </ResponsiveGridLayout>
     </div>
 )};
@@ -679,7 +768,6 @@ const SummaryStatistic = ({
     </div> 
   );
 }
-
 
 const Chart = ({ 
   // generateChart,
@@ -823,53 +911,40 @@ const Chart = ({
     );
 };
 
-const Table = () => {
+const Table = ({ 
+  // generateChart,
+  chartId,
+  TabData,
+  columns,
+}) => {
 
-  const [columns, setColumns] = useState([]);
-  const [data, setData] = useState([]);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+      if (TabData && columns) {
+          setIsReady(true);
+      }
+  }, [TabData, columns]);
 
-  const fetchData = () => {
-    axios
-    .post("http://localhost:5000/chartData")
-    .then(response => {
-      const tableData = response.data
-      createTable(tableData);
-      console.log('Received tableData:', tableData);
-    })
-    .catch(error => {
-      console.error("Error retrieving Table Data:", error);
-    });
+  if (!isReady ) {
+    return null; // Don't render the chart if the necessary variables are not ready
   }
-
-  const createTable = tableData => {
-    console.log("Received tableData:", tableData);
-    if (tableData && tableData.columns && tableData.data) {
-      setColumns(tableData.columns);
-      setData(tableData.data);
-    } else {
-        console.error("Invalid tableData format:", tableData);
-    }
-  };
 
   return (
     <div>
-    
-    <ReactTable
-      filterable
-      data={data}
-      columns={columns}
-      // column={columnDefaults}
-      style={{
-          height: "800px" // This will force the table body to overflow and scroll, since there is not enough room
-      }}
-      className="-striped -highlight pa3"
-    />
-  
-   
+      <Scroll>
+        <ReactTable
+          filterable
+          data={TabData}
+          columns={columns}
+          defaultPageSize={100} // Set the default page size to 100 rows
+          showPagination={false} // Hide the pagination
+          style={{
+              height: "400px" // This will force the table body to overflow and scroll, since there is not enough room
+          }}
+          className="-striped -highlight pa3"
+        />
+      </Scroll>
     </div>
   );
 };
