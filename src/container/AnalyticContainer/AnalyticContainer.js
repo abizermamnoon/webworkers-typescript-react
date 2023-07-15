@@ -5,7 +5,7 @@ class AnalyticContainer extends Component {
     render() {
         if (this.props.activeTab === "Table") {
             return (
-                <div className="bg-lightest-blue ba shadow-5 br3" id="Table">
+                <div>
                     <Table
                         columns={this.props.columns}
                         data={this.props.data}

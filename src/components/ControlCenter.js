@@ -653,7 +653,7 @@ const ControlCenter = ({ list }) => {
               return (
                 <div
                   key={chart.chartId}
-                  className="chart-border"
+                  className="stat-border"
                   data-grid={{ w: 1.5, h: 1, x: 0, y: 0 }}
                 >
                   <SummaryStatistic
@@ -673,7 +673,7 @@ const ControlCenter = ({ list }) => {
               return (
                 <div
                   key={chart.chartId}
-                  className="chart-border"
+                  className="table-border"
                   data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
                 >
                   <Scroll>
@@ -815,8 +815,18 @@ const Chart = ({
   
     const xAxisData = sortedData.xAxisData;
     const yAxisData = sortedData.yAxisData;
-    
+
+    const middleIndex = Math.floor(xAxisData.length / 2);
+    const mid_x = xAxisData[middleIndex];
+    const mid_y = yAxisData[middleIndex];
+
+    const endIndex = Math.floor(xAxisData.length);
+    const end_x = xAxisData[endIndex];
+    const end_y = yAxisData[endIndex];
+
     console.log('Theme:', theme)
+    console.log('mid_x:', mid_x)
+    console.log('mid_y:', mid_y)
     console.log('xAxisParam:', xAxisParam)
     
     let series = [];
@@ -830,11 +840,12 @@ const Chart = ({
             value: yAxisData[index],
           })),
           type: "pie",
-          radius: type === 'pie' ? "50%" : ['40%', '70%'], // Set the radius of the pie chart
+          radius: type === 'pie' ? "50%" : ['40%', '70%'], // Set the radius of the pie chart        
           label: {
             show: true,
-            formatter: '{b} :{d}%',
-            
+            formatter:  function(params) {
+              return params.name + '\n' + params.percent + '%';
+            },   
           },
           labelLine: {
             show: true, // Show the label line
@@ -845,19 +856,39 @@ const Chart = ({
       ];
     } else {
         yAxisParam.forEach((yAxisParam, i) => {
-        series.push({
+          const midYValues = mid_y.map((value) => ({
+            coord: [mid_x, value],
+            value: value
+          }));
+          const seriesItem = {
           name: yAxisParam,
           data: yAxisData.map((data) => data[i]),
           type: type,
-          label: {
-            show: true
+          endLabel: {
+            show: true,
+            offset: [-20.5, -13.5]
+          },
+          markPoint: {
+            data: [
+              { type: 'max', name: 'Max' },
+              { type: 'min', name: 'Min' },
+              { type: 'average', name: 'Average' },
+              ...midYValues
+            ],
+            symbol: "pin",
+            label: {
+              show: true,
+              position: "inside",
+              color: '#fff',
+            }
           },
           emphasis: {
             disabled: true
           },
           silent: true,
           animation: false,
-        });
+        };
+        series.push(seriesItem);
         legendData.push(yAxisParam);
       });
     }
@@ -952,24 +983,15 @@ const Table = ({
   };
 
   return (
-    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
+    <div  onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
         <ReactTable
-          filterable
+          // filterable
           data={TabData}
           columns={columns}
           defaultPageSize={100} // Set the default page size to 100 rows
           showPagination={false} // Hide the pagination
-          style={{
-              height: "400px" // This will force the table body to overflow and scroll, since there is not enough room
-          }}
-          // className="-striped -highlight pa3"
-          getTdProps={(state, rowInfo, column, instance) => {
-            return {
-              style: {
-                fontSize: '12px' // Adjust the font size here
-              }
-            };
-          }}
+          className="-striped -highlight compact-table" 
+          
         />
     </div>
 

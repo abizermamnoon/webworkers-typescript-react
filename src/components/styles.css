@@ -66,8 +66,27 @@ transform: translateY(0); /* Reset the row's position */
   text-align: center;
   justify-content: center;
   gap: 10px;
+  
 }
 
 .chart-border  {
   border: 2px solid #000;
+} 
+
+.stat-border  {
+  border: 2px solid #000;
+  background-color: #fdf5e6;
+}
+
+.table-border  {
+  border: 2px solid #000;
+}
+
+.compact-table {
+  font-size: 12px; /* Adjust the font size as needed */
+}
+
+.compact-table .rt-th,
+.compact-table .rt-td {
+  padding: 5px 8px; /* Adjust the padding as needed */
 }

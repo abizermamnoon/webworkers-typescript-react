@@ -44,7 +44,7 @@ const UploadFile = () => {
 
     useEffect(() => {  
         fetchData();   
-      }, [data]);
+      }, [data, LoadData]);
 
     const fetchData = () => {
     axios

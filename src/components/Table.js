@@ -39,7 +39,7 @@ const Table = () => {
       style={{
         height: "800px" // This will force the table body to overflow and scroll, since there is not enough room
       }}
-      className="-striped -highlight pa3"
+      className="-striped -highlight pa3 -table-active"
     />
   );
 };
