@@ -173,6 +173,11 @@ const ControlCenter = ({ list }) => {
           console.error("Invalid tableData format:", tableData);
         }
       };
+
+      useEffect(() => {
+        console.log('TabData:', TabData);
+        console.log('columns:', columns);
+      }, [TabData, columns]);
         
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
@@ -371,7 +376,7 @@ const ControlCenter = ({ list }) => {
           setShowxAxis(true);
           setShowSeries(true);
           setShowStats(false);
-        } else if (selectedType === "pie" || selectedType === "donut") {
+        } else if (selectedType === "pie" || selectedType === "donut" || selectedType === "boxplot") {
           setShowxAxis(false);
           setShowSeries(true);
           setShowStats(false);
@@ -425,6 +430,7 @@ const ControlCenter = ({ list }) => {
         setInterval("");
         setSeriesOption("")
         setSummaryStat("")
+        setTheme("")
         setSelectedChartId(null)
         setDataProcessed(false)
       };
@@ -480,6 +486,10 @@ const ControlCenter = ({ list }) => {
           <div className={`chart-icon ${type === "chartable" ? "active" : ""}`} onClick={() => handleTypeChange("chartable")}>
           <input type="checkbox" checked={type === "chartable"} onChange={() => handleTypeChange("chartable")}/>
             Chart Table
+          </div>
+          <div className={`chart-icon ${type === "boxplot" ? "active" : ""}`} onClick={() => handleTypeChange("boxplot")}>
+          <input type="checkbox" checked={type === "boxplot"} onChange={() => handleTypeChange("boxplot")}/>
+            Box Plot
           </div>
       </div>
     
@@ -809,129 +819,149 @@ const Chart = ({
   };
   
   const getOptions = () => {
-    if (!sortedData || !sortedData.yAxisData) {
-      return {}; // Exit early if sortedData or yAxisParams is not available
-    }
-  
-    const xAxisData = sortedData.xAxisData;
-    const yAxisData = sortedData.yAxisData;
+    if (!sortedData || (!sortedData.yAxisData && type !== "boxplot")) {
+      return {}; // Exit early if sortedData or yAxisData is not available
+    } else if (type !== 'boxplot') {
+      const xAxisData = sortedData.xAxisData;
+      const yAxisData = sortedData.yAxisData;
 
-    const middleIndex = Math.floor(xAxisData.length / 2);
-    const mid_x = xAxisData[middleIndex];
-    const mid_y = yAxisData[middleIndex];
-
-    const endIndex = Math.floor(xAxisData.length);
-    const end_x = xAxisData[endIndex];
-    const end_y = yAxisData[endIndex];
-
-    console.log('Theme:', theme)
-    console.log('mid_x:', mid_x)
-    console.log('mid_y:', mid_y)
-    console.log('xAxisParam:', xAxisParam)
+      const middleIndex = Math.floor(xAxisData.length / 2);
+      const mid_x = xAxisData[middleIndex];
+      const mid_y = yAxisData[middleIndex];
+      
+      let series = [];
+      let legendData = [];
     
-    let series = [];
-    let legendData = [];
-  
-    if (type === "pie" || type === "donut") {
-      series = [
-        {
-          data: yAxisData.map((data, index) => ({
-            name: xAxisData[index],
-            value: yAxisData[index],
-          })),
-          type: "pie",
-          radius: type === 'pie' ? "50%" : ['40%', '70%'], // Set the radius of the pie chart        
-          label: {
-            show: true,
-            formatter:  function(params) {
-              return params.name + '\n' + params.percent + '%';
-            },   
-          },
-          labelLine: {
-            show: true, // Show the label line
-            length: 15, // Set the length of the label line
-            length2: 30, // Set the second length of the label line
-          },
-        },
-      ];
-    } else {
-        yAxisParam.forEach((yAxisParam, i) => {
-          const midYValues = mid_y.map((value) => ({
-            coord: [mid_x, value],
-            value: value
-          }));
-          const seriesItem = {
-          name: yAxisParam,
-          data: yAxisData.map((data) => data[i]),
-          type: type,
-          endLabel: {
-            show: true,
-            offset: [-20.5, -13.5]
-          },
-          markPoint: {
-            data: [
-              { type: 'max', name: 'Max' },
-              { type: 'min', name: 'Min' },
-              { type: 'average', name: 'Average' },
-              ...midYValues
-            ],
-            symbol: "pin",
+      if (type === "pie" || type === "donut") {
+        series = [
+          {
+            data: yAxisData.map((data, index) => ({
+              name: xAxisData[index],
+              value: yAxisData[index],
+            })),
+            type: "pie",
+            radius: type === 'pie' ? "50%" : ['40%', '70%'], // Set the radius of the pie chart        
             label: {
               show: true,
-              position: "inside",
-              color: '#fff',
-            }
+              formatter:  function(params) {
+                return params.name + '\n' + params.percent + '%';
+              },   
+            },
+            labelLine: {
+              show: true, // Show the label line
+              length: 15, // Set the length of the label line
+              length2: 30, // Set the second length of the label line
+            },
           },
-          emphasis: {
-            disabled: true
-          },
-          silent: true,
-          animation: false,
-        };
-        series.push(seriesItem);
-        legendData.push(yAxisParam);
-      });
-    }
-  
-    return {
-      legend: {
-        show: type === "pie" || type === 'donut' ? false : true,
-      },
-      tooltip: {
-        show: type === "pie" ? true : false,
-        trigger: type === "pie" ? 'item' : 'none',
-        formatter: '{b} : {c} ({d}%)'
-      },
-      xAxis: {
-        silent: true,
-        triggerEvent: false,
-        show: type === "pie" || type === 'donut' ? false : true,
-        type: "category",
-        data: type === "pie" ? [] : xAxisData,
-        axisTick: {
-          show: true,
+        ];
+      } else {
+          yAxisParam.forEach((yAxisParam, i) => {
+            const midYValues = mid_y.map((value) => ({
+              coord: [mid_x, value],
+              value: value
+            }));
+            const seriesItem = {
+            name: yAxisParam,
+            data: yAxisData.map((data) => data[i]),
+            type: type,
+            endLabel: {
+              show: true,
+              offset: [-20.5, -13.5]
+            },
+            markPoint: {
+              data: [
+                { type: 'max', name: 'Max' },
+                { type: 'min', name: 'Min' },
+                { type: 'average', name: 'Average' },
+                ...midYValues
+              ],
+              symbol: "pin",
+              label: {
+                show: true,
+                position: "inside",
+                color: '#fff',
+              }
+            },
+            emphasis: {
+              disabled: true
+            },
+            silent: true,
+            animation: false,
+          };
+          series.push(seriesItem);
+          legendData.push(yAxisParam);
+        });
+      }
+    
+      return {
+        legend: {
+          show: type === "pie" || type === 'donut' ? false : true,
         },
-      },
-      yAxis: {
-        silent: true,
-        type: "value",
-      },
-      series: series,
+        tooltip: {
+          show: type === "pie" ? true : false,
+          trigger: type === "pie" ? 'item' : 'none',
+          formatter: '{b} : {c} ({d}%)'
+        },
+        xAxis: {
+          silent: true,
+          triggerEvent: false,
+          show: type === "pie" || type === 'donut' ? false : true,
+          type: "category",
+          data: type === "pie" ? [] : xAxisData,
+          axisTick: {
+            show: true,
+          },
+        },
+        yAxis: {
+          silent: true,
+          type: "value",
+        },
+        series: series,
+      };
+    } else if (type === 'boxplot') {
+        console.log('type:', type)
+        return {
+          dataset: [
+            {
+              source: sortedData
+            },
+            {
+              transform: {
+                type: 'boxplot',
+                config: { itemNameFormatter: function (params) {
+                  return yAxisParam[params.value];
+                } }
+              }
+            },
+            {
+              fromDatasetIndex: 1,
+            }
+          ],
+          xAxis: {
+            type: 'category',
+          },
+          yAxis: {
+            type: 'value',
+          },
+          series: [
+            {
+              name: 'boxplot',
+              type: 'boxplot',
+              datasetIndex: 1
+            },
+          ]
+        };
     };
   };
   
-    return (
-      
-       
-      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
-        
+    return ( 
+      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>  
         <ReactEcharts 
           option={getOptions()} 
           style={{ height: "100%", width: "100%" }} 
           chartId={chartId}
           theme={theme}
         />
-
       </div>
       
       
@@ -981,6 +1011,9 @@ const Table = ({
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
   };
+
+  console.log("TabData:", TabData);
+  console.log("Columns:", columns);
 
   return (
     <div  onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
