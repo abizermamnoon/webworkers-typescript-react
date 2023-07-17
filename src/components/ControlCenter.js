@@ -392,6 +392,10 @@ const ControlCenter = ({ list }) => {
           setShowSeries(true)
           setShowStats(false);
           setShowTable(true)
+        } else if (selectedType === "heatmap") {
+          setShowxAxis(true);
+          setShowSeries(true)
+          setShowStats(false);
         }
        
       };
@@ -493,6 +497,10 @@ const ControlCenter = ({ list }) => {
           <div className={`chart-icon ${type === "boxplot" ? "active" : ""}`} onClick={() => handleTypeChange("boxplot")}>
           <input type="checkbox" checked={type === "boxplot"} onChange={() => handleTypeChange("boxplot")}/>
             Box Plot
+          </div>
+          <div className={`chart-icon ${type === "heatmap" ? "active" : ""}`} onClick={() => handleTypeChange("heatmap")}>
+          <input type="checkbox" checked={type === "heatmap"} onChange={() => handleTypeChange("heatmap")}/>
+            Heat Map
           </div>
       </div>
     
@@ -822,19 +830,26 @@ const Chart = ({
   };
   
   const getOptions = () => {
-    if (!sortedData || (!sortedData.yAxisData && type !== "boxplot")) {
+    if (!sortedData ) {
       return {}; // Exit early if sortedData or yAxisData is not available
-    } else if (type !== 'boxplot') {
+    } else if (type !== 'boxplot' && type !== 'heatmap') {
       const xAxisData = sortedData.xAxisData;
       const yAxisData = sortedData.yAxisData;
+      console.log('sorted Data:', sortedData)
+      let mid_x = null; // Initialize mid_x as null
+      let mid_y = null; // Initialize mid_y as null
 
-      const middleIndex = Math.floor(xAxisData.length / 2);
-      const mid_x = xAxisData[middleIndex];
-      const mid_y = yAxisData[middleIndex];
-      
+      if (type !== 'pie' && type !== 'donut') {
+        console.log('Chart Type:', type)
+        // Compute mid_x and mid_y only for pie and donut chart types
+        const middleIndex = Math.floor(xAxisData.length / 2);
+        mid_x = xAxisData[middleIndex];
+        mid_y = yAxisData[middleIndex];
+      }
+        
       let series = [];
       let legendData = [];
-    
+
       if (type === "pie" || type === "donut") {
         series = [
           {
@@ -954,7 +969,47 @@ const Chart = ({
             },
           ]
         };
-    };
+    } else if (type === 'heatmap') {
+      const xAxisData = sortedData.xAxisData;
+      const yAxisData = sortedData.yAxisData;
+      const min = sortedData.min;
+      const max = sortedData.max;
+      const data = sortedData.data.map(function (item) {
+        return [item[0], item[1], item[2] || '-'];
+      });
+      return {
+        grid: {
+          height: '50%',
+          top: '10%'
+        },
+        xAxis: {
+          type: 'category',
+          data: xAxisData,     
+        },
+        yAxis: {
+          type: 'category',
+          data: yAxisData,
+        },
+        visualMap: {
+          min: min,
+          max: max,
+          calculable: true,
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '15%'
+        },
+        series: [
+          {
+            name: 'Punch Card',
+            type: 'heatmap',
+            data: data,
+            label: {
+              show: true
+            },
+          }
+        ]
+      }
+    }
   };
   
     return ( 
