@@ -23,6 +23,7 @@ class App extends Component {
             selectedGroups: [], // Added selectedGroup state
             calculation: "",
             columnTypes: [],
+            isCalculating: false,
         };
     }
 
@@ -124,6 +125,7 @@ class App extends Component {
       };
     
       postCalculation = () => {
+        this.setState({ isCalculating: true });
         const { calculation } = this.state;
     
         axios
@@ -135,20 +137,43 @@ class App extends Component {
             this.setState({
                 columns: response.data.columns,
                 data: response.data.data,
+                isCalculating: false,
             });
             
           })
           .catch(error => {
             console.error("Error posting calculation:", error);
+            this.setState({ isCalculating: false });
           });
       };
+    
+    // Function to send POST request to transformtable endpoint
+    handleTransformClick = () => {
+        this.setState({ isTransforming: true });
+        axios
+        .post("http://localhost:5000/transformtable")
+        .then(response => {
+            // Handle the response from the backend
+            console.log("Transformation Result:", response.data);
+            // Update the state with the transformed data if necessary
+            this.setState({
+                isTransforming: false, // Set isTransforming to false when the transformation is complete
+                showTransformedMessage: true, // Set showTransformedMessage to true to display the message
+            });
+        })
+        .catch(error => {
+            console.error("Error posting transformation:", error);
+            this.setState({ isTransforming: false }); 
+        });
+    };
+
 
     render() {
-        const { data, columns, selectedColumn, groups, selectedGroups } = this.state;
+        const { data, columns, selectedColumn, groups, selectedGroups, isCalculating, isTransforming, showTransformedMessage } = this.state;
         return (
             <div className="App container-fluid">
                 <div className="d-flex mb-3">
-                    <div className="mr-3">
+                    <div className="p-2">
                         <label>Group by:</label>
                             <select value={selectedColumn} onChange={this.handleColumnSelect}>
                                 <option key="" value=""></option>
@@ -161,8 +186,9 @@ class App extends Component {
                                     )
                                 ))}
                             </select>
-                    </div>
-                    <div className="pl-3">
+
+                    {groups.length > 0 && (
+                        <div>
                         <label>Filter by:</label>
                         <select
                             value={selectedGroups}
@@ -175,12 +201,23 @@ class App extends Component {
                                 </option>
                             ))}
                         </select>
-                    </div>
-                    <div className="pl-3">
-                        <label>Calculation  : </label>
-                        <input id="calculation" value={this.state.calculation} onChange={this.handleCalculateChange} onKeyDown={this.handleCalculateKeyDown} style={{ width: '400px' }} />
+                        </div>
+                    )}
+                        
+                    <label>Calculation  : </label>
+                    <input id="calculation" value={this.state.calculation} onChange={this.handleCalculateChange} onKeyDown={this.handleCalculateKeyDown} style={{ width: '400px' }} />
+             
+                    {isCalculating && <div>Calculating... Please wait.</div>}
+                   
+                    <button onClick={this.handleTransformClick} disabled={isTransforming}>{isTransforming ? "Transforming..." : "Transform"}</button>
+               
+                        {/* Show the message when transformation is complete */}
+                        {showTransformedMessage && <div>Data has been transformed.</div>}
+                        {/* Show "Transforming..." while transformation is in progress */}
+                        {isTransforming && !showTransformedMessage && <div>Transforming... Please wait.</div>}
                     </div>
                 </div>
+                
             {this.state.data.length > 0 ? (
                     <Scroll className="absolute pa5 row pagination-centered">
                         <AnalyticContatiner

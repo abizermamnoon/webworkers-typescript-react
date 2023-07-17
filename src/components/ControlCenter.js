@@ -59,6 +59,7 @@ const ControlCenter = ({ list }) => {
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
     const [showSeries, setShowSeries] = useState(false);
+    const [showDatetime, setShowDatetime] = useState(false);
     const [showStats, setShowStats] = useState(false);
     const [sortedData, setSortedData] = useState({});
     const [interval, setInterval] = useState("");
@@ -182,6 +183,8 @@ const ControlCenter = ({ list }) => {
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
           setDataProcessed(false)
+          const isDatetime = columnTypes[value] === "datetime";
+          setShowDatetime(isDatetime);
         };
 
       const handleThemeChange = (value) => {
@@ -549,7 +552,7 @@ const ControlCenter = ({ list }) => {
           </>
         )}
           
-          {xAxisParam === "datetime" && (
+          {showDatetime && (
             <>
               <label>Interval:</label>
               <div className="icon-container">
