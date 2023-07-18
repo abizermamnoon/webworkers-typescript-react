@@ -70,16 +70,16 @@ transform: translateY(0); /* Reset the row's position */
 }
 
 .chart-border  {
-  border: 2px solid #000;
+  border: 0.5px solid grey;
 } 
 
 .stat-border  {
-  border: 2px solid #000;
+  border: 0.5px solid grey;
   background-color: #fdf5e6;
 }
 
 .table-border  {
-  border: 2px solid #000;
+  border: 0.5px solid #000;
 }
 
 .compact-table {
@@ -89,4 +89,11 @@ transform: translateY(0); /* Reset the row's position */
 .compact-table .rt-th,
 .compact-table .rt-td {
   padding: 5px 8px; /* Adjust the padding as needed */
+}
+
+/* Add your custom styles for the selected chart */
+.chart-border.selected-chart,
+.stat-border.selected-chart,
+.table-border.selected-chart {
+  border: 6px solid yellow;
 }

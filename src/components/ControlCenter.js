@@ -141,7 +141,7 @@ const ControlCenter = ({ list }) => {
         console.log('stored:', stored);
     
         useEffect(() => {
-          if (Object.keys(sortedData).length !== 0) {
+          if (Object.keys(sortedData).length !== 0 && type === 'chartable') {
             fetchData();
           }
         }, [sortedData]);
@@ -151,7 +151,8 @@ const ControlCenter = ({ list }) => {
         .post("http://localhost:5000/chartData", {
           xAxisParam,
           yAxisParams,
-          type
+          type,
+          interval,
         })
         .then(response => {
           const tableData = response.data
@@ -666,7 +667,8 @@ const ControlCenter = ({ list }) => {
                     theme={chart.theme}
                     onRemoveChart={handleRemoveChart}
                     onSelectChart={setSelectedChartId} 
-                    onChartID={handleChartIdChange}           
+                    onChartID={handleChartIdChange} 
+                             
                   />
                 </div>
               );
@@ -799,6 +801,7 @@ const Chart = ({
 }) => {
 
   const [isReady, setIsReady] = useState(false);
+  const [selectedChartId, setSelectedChartId] = useState(null);
 
   useEffect(() => {
       if (yAxisParam) {
@@ -825,6 +828,7 @@ const Chart = ({
   }
 
   const handleSelectChart = () => {
+    setSelectedChartId((prevChartId) => (prevChartId === chartId ? null : chartId));
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
   };
@@ -938,36 +942,25 @@ const Chart = ({
       };
     } else if (type === 'boxplot') {
         console.log('type:', type)
+        console.log('sortedData:', sortedData)
+        console.log('yAxisParams:', yAxisParam)
         return {
-          dataset: [
-            {
-              source: sortedData
-            },
-            {
-              transform: {
-                type: 'boxplot',
-                config: { itemNameFormatter: function (params) {
-                  return yAxisParam[params.value];
-                } }
-              }
-            },
-            {
-              fromDatasetIndex: 1,
-            }
-          ],
           xAxis: {
-            type: 'category',
+            type: "category",
+            data: yAxisParam,
           },
           yAxis: {
-            type: 'value',
+            type: "value",
           },
-          series: [
-            {
-              name: 'boxplot',
-              type: 'boxplot',
-              datasetIndex: 1
-            },
-          ]
+          series: [{
+            name: "boxplot",
+            type: "boxplot",
+            data: sortedData,
+            colorBy: "data",
+          }],
+          emphasis: {
+            disabled: true
+          }
         };
     } else if (type === 'heatmap') {
       const xAxisData = sortedData.xAxisData;
@@ -1007,13 +1000,15 @@ const Chart = ({
               show: true
             },
           }
-        ]
+        ],
+        progressive: 400,
+        silent: true,
       }
     }
   };
   
     return ( 
-      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>  
+      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }} className={`chart-border ${selectedChartId === chartId ? "selected-chart" : ""}`}>  
         <ReactEcharts 
           option={getOptions()} 
           style={{ height: "100%", width: "100%" }} 
