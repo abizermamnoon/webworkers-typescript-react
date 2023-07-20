@@ -129,15 +129,15 @@ const ControlCenter = ({ list }) => {
             const sortedData = event.data;
         
             setSortedData(sortedData);
-            if (type === "pie") {
+            if (type === 'pie' || type === 'boxplot' || type === 'donut' || type === 'heatmap') {
               setDataProcessed(true);
             } else if (sortedData.yAxisData && yAxisParams.length === sortedData.yAxisData[0].length) {
               setDataProcessed(true);
-            }
+            } 
           };
   
         }, []);
-
+              
         console.log('stored:', stored);
     
         useEffect(() => {

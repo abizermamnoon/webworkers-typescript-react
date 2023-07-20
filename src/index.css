@@ -27,13 +27,74 @@ body {
 }
 
 .file-upload {
+  position: absolute;
+  top: 0;
+  left: 5%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  /* margin-top: 0.25rem; */
+  padding: 20px;
+  border: 2px dotted #ccc;
+  border-radius: 8px;
+  background-color:  ivory;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%; /* Adjust the width to your preference */
+  height: 100%;
+   /* Limit the maximum width to 80% of the container */
 }
+
+/* Style the input file element */
+.file-upload input[type="file"] {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+/* Style the button */
+.file-upload button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+/* Style the progress bar */
+.progressBar {
+  width: 100%;
+  background-color: blue;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  color: black;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.tabular-textarea {
+  display: table;
+  width: 100%;
+   /* Gap between cells */
+   /* Margin between textareas */
+}
+
+.table-cell {
+  display: table-cell;
+  vertical-align: top; /* To align textareas at the top of each cell */
+  width: 33%; /* Adjust this percentage based on the number of columns you want */
+  padding: 5px;
+  box-sizing: border-box;
+}
+
 
 .count {
   padding: 2rem 0 3rem;
@@ -45,4 +106,38 @@ body {
   width: 100%;
   padding: 0 0.5rem;
   /* max-width: 700px; */
+}
+
+.box-chart {
+  display: flex;
+  gap: 10px;
+}
+
+.icon-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  /* flex-direction: row; */
+  /* justify-content: center; */
+  align-items: center;
+}
+
+.icon-container > * {
+  margin-right: 0.5rem;
+}
+
+.chart-icon {
+  cursor: pointer;
+  padding: 4px;
+  margin: 1px;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+  color: #333;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.chart-icon.active {
+  background-color: #2196f3;
+  color: #fff;
 }
