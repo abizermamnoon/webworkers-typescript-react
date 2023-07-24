@@ -4,6 +4,37 @@ import axios from 'axios';
 import './index.css';
 import ReactTable, { ReactTableDefaults } from "react-table";
 import Loader from "./components/Loader";
+import styled from "styled-components";
+import { IconContext } from "react-icons/lib";
+import * as AiIcons from "react-icons/ai";
+import Scroll from "./container/Scroll/Scroll";
+
+const Nav = styled.div`
+  background: white;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  
+`;
+ 
+const TabNav = styled.nav`
+  background: white;
+  width: 200px;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  top: 4;
+  left: ${({ tabview }) => (tabview ? "auto" : "-100%")};
+  right: 0;
+  top: 0;
+  z-index: 10;
+`;
+ 
+const ControlWrap = styled.div`
+  width: 100%;
+  position: relative;
+`;
 
 const UploadFile = () => {
     const [file, setFile] = useState([]);
@@ -27,6 +58,9 @@ const UploadFile = () => {
     const [table, setTable] = useState(false);
     const [DfJoin, setDfJoin] = useState(false);
     const [DropNaVal, setDropNaVal] = useState(false);
+    const [tabview, setTabView] = useState(true);
+    const [selectedFiles, setSelectedFiles] = useState(null);
+    const showTabView = () => setTabView(!tabview);
 
     const uploadFile = () => {
        const formData = new FormData();
@@ -104,6 +138,21 @@ const UploadFile = () => {
         });
         }   
     }, [yAxisParamsToSend]);
+
+    const handleSelectedTable = (index) => {
+        setSelectedFiles(index)
+      
+        // Assuming the backend endpoint to send the data is '/findtable'
+        axios
+          .post("http://localhost:5000/findtable", { selectedFiles: [index] }) // Pass the selectedFiles array
+          .then((response) => {
+            // Handle the response from the backend if needed
+            console.log("Selected data sent successfully:", response.data);
+          })
+          .catch((error) => {
+            console.error("Error sending selected data:", error);
+          });
+      };
 
     const handleJoinTable = () => {
         axios
@@ -196,6 +245,35 @@ const UploadFile = () => {
     };
 
     return (
+        <>
+        {data.name !== "" && (
+            <>
+            <Nav>
+                <button onClick={showTabView}>Table View</button>  
+            </Nav>
+            <IconContext.Provider value={{ color: "black" }}>
+       
+            <TabNav tabview={tabview}>
+                <ControlWrap> 
+                <Scroll>     
+                <AiIcons.AiOutlineClose onClick={showTabView} style={{ position: "absolute", top: 0, right: 0 }}/>
+                {data.map((fileData, index) => (
+                    <div key={index} className={`chart-icon ${selectedFiles === index ? "active" : ""}`}>
+                    <input
+                        type="radio"
+                        checked={selectedFiles === index}
+                        onChange={() => handleSelectedTable(index)}
+                         />
+                        {fileData.name} 
+                    </div>
+                ))}
+                </Scroll>
+                </ControlWrap>
+                </TabNav>
+            </IconContext.Provider> 
+            </>     
+        )}
+        
         <div className='container'>
         
         {data.name === "" && (
@@ -291,6 +369,7 @@ const UploadFile = () => {
                 </div>
             )}
         </div>
+        </> 
     );
 };
 export default UploadFile

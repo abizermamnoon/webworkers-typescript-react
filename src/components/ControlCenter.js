@@ -29,6 +29,7 @@ const Nav = styled.div`
   justify-content: flex-end;
   align-items: center;
   
+  
 `;
  
 const ControlNav = styled.nav`
@@ -59,10 +60,16 @@ const ControlCenter = ({ list }) => {
     const [type, setType] = useState("");
     const [showxAxis, setShowxAxis] = useState(false);
     const [showSeries, setShowSeries] = useState(false);
+    const [title, setTitle] = useState("");
+    const [PageTitle, setPageTitle] = useState("");
+    const [SubTitle, setSubTitle] = useState("");
     const [showDatetime, setShowDatetime] = useState(false);
     const [showStats, setShowStats] = useState(false);
     const [sortedData, setSortedData] = useState({});
     const [interval, setInterval] = useState("");
+    const [Stack, setStack] = useState('');
+    const [showStack, setShowStack] = useState(false);
+    const [showTitle, setShowTitle] = useState(false);
     const [SummaryStat, setSummaryStat] = useState("");
     const [resStat, setResStat] = useState({});
     const [chartId, setChartId] = useState(1);
@@ -79,7 +86,9 @@ const ControlCenter = ({ list }) => {
     const [columns, setColumns] = useState([]);
     const [TabData, setTabData] = useState([]);
     const [Theme, setTheme] = useState('');
+    const [showTheme, setShowTheme] = useState(false);
     const [ThemeChange, setThemeChange] = useState();
+    const [copiedText, setCopiedText] = useState('');
     
     useEffect(() => {
         if (list && list.length > 0) {
@@ -180,12 +189,16 @@ const ControlCenter = ({ list }) => {
         console.log('TabData:', TabData);
         console.log('columns:', columns);
       }, [TabData, columns]);
-        
+
       const handleXAxisChange = (value) => {
           setXAxisParam(value);
           setDataProcessed(false)
           const isDatetime = columnTypes[value] === "datetime";
           setShowDatetime(isDatetime);
+        };
+
+        const handleTextCopy = (text) => {
+          setCopiedText(text);
         };
 
       const handleThemeChange = (value) => {
@@ -205,6 +218,32 @@ const ControlCenter = ({ list }) => {
         console.log('Theme:', Theme);
         console.log('Theme Change:', ThemeChange);
       }, [Theme, ThemeChange]);
+
+      useEffect(() => {
+        if (type === 'pie' || type === 'donut' || type === 'heatmap' || type === 'boxplot') {
+          setThemeChange(ThemeChange ?? essos)
+        } else if (type === 'line' || type === 'scatter'){
+          setThemeChange(ThemeChange ?? westeros)
+        } 
+      }, [type, ThemeChange]);
+
+      useEffect(() => {
+    
+        const handleClickOutsideChartContainer = (event) => {
+          const chartContainer = document.querySelector('.box-container');
+          if (chartContainer && !chartContainer.contains(event.target)) {
+            if (selectedChartId !== null) {
+              handleResetChart();
+            }
+          }
+        };
+    
+        document.addEventListener("click", handleClickOutsideChartContainer);
+    
+        return () => {
+          document.removeEventListener("click", handleClickOutsideChartContainer);
+        };
+      }, [selectedChartId]);
 
       const handleSeriesOptionChange = (value) => {
         setSeriesOption(value);
@@ -268,29 +307,37 @@ const ControlCenter = ({ list }) => {
       };
 
       const handleAddChartChange = () => {
-        if (type !== 'table' && type !== 'chartable') {  
+        if (type !== 'table' && type !== 'chartable' && type !== 'textbox') {
           const newChart = {
             chartId: chartId,
             sortedData: sortedData,
+            title: title,
+            subtitle: SubTitle,
             xAxisParam: xAxisParam,
             yAxisParam: yAxisParams,
             type: type,
             interval: interval,
             theme: ThemeChange,
+            stack: Stack,
           };
           setStored((prevStored) => ({
             ...prevStored,
             [chartId]: {
               xAxisParam: xAxisParam,
               yAxisParams: yAxisParams,
+              title: title,
+              subtitle: SubTitle,
               type: type,
               interval: interval,
               theme: Theme,
+              stack: Stack,
             },
           }));
           setXAxisParam("");
           setYAxisParams([]);
           setType("");
+          setTitle("");
+          setSubTitle("")
           setInterval("");   
           setCharts((prevCharts) => [...prevCharts, newChart]);
           setChartId((prevId) => prevId + 1);
@@ -298,6 +345,7 @@ const ControlCenter = ({ list }) => {
           setDataProcessed(false);
           setTheme('');
           setThemeChange();
+          setStack('');
       } else if (type === 'table') {
         const newChart = {
           chartId: chartId,
@@ -323,6 +371,8 @@ const ControlCenter = ({ list }) => {
       } else if (type === 'chartable') {
           const newChart = {
             chartId: chartId,
+            title: title,
+            subtitle: SubTitle,
             TabData: TabData,
             columns: columns,
             xAxisParam: xAxisParam,
@@ -335,9 +385,10 @@ const ControlCenter = ({ list }) => {
             [chartId]: {
               xAxisParam: xAxisParam,
               yAxisParams: yAxisParams,
+              title: title,
+              subtitle: SubTitle,
               type: type,
               interval: interval,
-              
             },
           }));
           setXAxisParam("");
@@ -348,6 +399,23 @@ const ControlCenter = ({ list }) => {
           setChartId((prevId) => prevId + 1);
           setChartIdList((prevList) => [...prevList, chartId + 1]);
           setDataProcessed(false);
+      } else if (type === 'textbox') {
+        const newChart = {
+          chartId: chartId,
+          type: type,
+          copiedText: copiedText,
+        };
+        setStored((prevStored) => ({
+          ...prevStored,
+          [chartId]: {
+            type: type,
+            copiedText: copiedText,
+          },
+        }));
+        
+        setCharts((prevCharts) => [...prevCharts, newChart]);
+        setChartId((prevId) => prevId + 1);
+        setChartIdList((prevList) => [...prevList, chartId + 1]); 
       }
       };
 
@@ -358,47 +426,83 @@ const ControlCenter = ({ list }) => {
       const handleChartIdChange = (event) => {
         const selectedId = parseInt(event.target.value);
         setSelectedChartId(selectedId);
-        if (stored[selectedId] && type !== 'table') {
-          const { xAxisParam, yAxisParams, type, interval, theme } = stored[selectedId];   
+        console.log('selectedChartID:', event)
+        if (stored[selectedId]) {
+          const { xAxisParam, yAxisParams, type, interval, theme, SeriesOption, fontStyle, fontSize, copiedText, stack, title, subtitle } = stored[selectedId];   
+          setTitle(title)
+          setSubTitle(subtitle)
           setXAxisParam(xAxisParam ?? '');
           setYAxisParams(yAxisParams ?? []);
           setType(type ?? '');
           setInterval(interval ?? '');
           setTheme(theme)
-
-        } else if (stored[selectedId] && type === 'table') {
-          const { SeriesOption, type } = stored[selectedId];
           setSeriesOption(SeriesOption ?? '');
-          setType(type ?? '');
+          setCopiedText(copiedText ?? '')
+          setStack(stack ?? '')
         } 
       };
+
+      useEffect(() => {
+        console.log('title:', title)
+      }, [title]);
+      
+      useEffect(() => {
+        console.log('sub title:', SubTitle)
+      }, [SubTitle]);
 
       const handleTypeChange = (selectedType) => {       
         setType(selectedType);   
         setDataProcessed(false)
-        if (selectedType === "line" || selectedType === "scatter" || selectedType === "bar") {
+        if (selectedType === "line" || selectedType === "bar") {
           setShowxAxis(true);
           setShowSeries(true);
           setShowStats(false);
+          setShowStack(true)
+          setShowTheme(true)
+          setShowTitle(true)
         } else if (selectedType === "pie" || selectedType === "donut" || selectedType === "boxplot") {
           setShowxAxis(false);
           setShowSeries(true);
           setShowStats(false);
+          setShowStack(false);
+          setShowTheme(true)
+          setShowTitle(true)
         } else if (selectedType === "table") {
           setShowxAxis(false);
           setShowSeries(false);
           setShowStats(true);
+          setShowTitle(false)
+          setShowStack(false)
+          setShowTheme(false)
         } else if (selectedType === "chartable") {
           setShowxAxis(true);
           setShowSeries(true)
           setShowStats(false);
           setShowTable(true)
+          setShowStack(false)
+          setShowTheme(false)
+          setShowTitle(true)
         } else if (selectedType === "heatmap") {
           setShowxAxis(true);
           setShowSeries(true)
           setShowStats(false);
+          setShowStack(false)
+          setShowTitle(true)
+        } else if (selectedType === "textbox") {
+          setShowxAxis(false);
+          setShowSeries(false);
+          setShowStats(false);
+          setShowStack(false)
+          setShowTheme(false)
+          setShowTitle(false)
+        } else if ( selectedType === "scatter" ) {
+          setShowxAxis(true);
+          setShowSeries(true);
+          setShowStats(false);
+          setShowStack(false)
+          setShowTheme(true)
+          setShowTitle(true)
         }
-       
       };
 
       const handleResetChart = () => {
@@ -423,6 +527,22 @@ const ControlCenter = ({ list }) => {
         setShowTable(false);
       };
 
+      const handleStackChange = (value) => {
+        setStack(value);
+      };
+
+      const handlePageTitleChange = (e) => {
+        setPageTitle(e.target.value);
+      };
+
+      const handleTitleChange = (e) => {
+        setTitle(e.target.value);
+      };
+
+      const handleSubTitleChange = (e) => {
+        setSubTitle(e.target.value);
+      };
+
       const handleRemoveChart = (chartId) => {
         setCharts((prevCharts) => prevCharts.filter((chart) => chart.chartId !== selectedChartId));
         setStored((prevStored) => {
@@ -441,19 +561,33 @@ const ControlCenter = ({ list }) => {
         setTheme("")
         setSelectedChartId(null)
         setDataProcessed(false)
+        setTitle("")
+        setSubTitle("")
+        setStack("")
       };
 
-      const handleUpdateChartChange = () => {
+      const handleUpdateChartChange = async () => {
+        await handleRemoveChart(selectedChartId);
         
-        handleRemoveChart(selectedChartId)
-
         handleAddChartChange()
-
+        
       };
 
       return (
         <>
-          <Nav>
+        <Nav>
+          <input
+              id="PageTitle"
+              value={PageTitle}
+              onChange={handlePageTitleChange}   
+              style={{ width: "100%", borderBottom: "1px solid black", border: "none", fontSize: "30px", fontFamily: "Helvetica, Arial, sans-serif", // Use an attractive font family
+              fontWeight: "bold", // Make the text bold for emphasis
+              letterSpacing: "1px", // Add slight letter spacing for a stylish look
+              lineHeight: "1.2", // Adjust line height for better readability
+              color: "#333"
+       }} // Set the font color for better contrast}}
+            />
+          
             <button onClick={showControl}>Control Center</button>  
           </Nav>
         <div className='box-container' >
@@ -503,8 +637,35 @@ const ControlCenter = ({ list }) => {
           <input type="checkbox" checked={type === "heatmap"} onChange={() => handleTypeChange("heatmap")}/>
             Heat Map
           </div>
+          <div className={`chart-icon ${type === "textbox" ? "active" : ""}`} onClick={() => handleTypeChange("textbox")}>
+          <input type="checkbox" checked={type === "textbox"} onChange={() => handleTypeChange("textbox")}/>
+            Text Box
+          </div>
       </div>
-    
+
+      {showTitle && (
+          <>
+            <label htmlFor="title">Chart Title:</label>
+            <input
+              id="title"
+              value={title}
+              onChange={handleTitleChange}
+              style={{ width: "200px" }}
+            />
+          </>
+        )}
+        {showTitle && (
+          <>
+            <label htmlFor="title">Chart Sub Title:</label>
+            <input
+              id="title"
+              value={SubTitle}
+              onChange={handleSubTitleChange}
+              style={{ width: "200px" }}
+            />
+          </> 
+        )}
+
             {showxAxis && (
               <>
                 <label htmlFor="xAxisParam">X-Axis:</label>
@@ -594,6 +755,24 @@ const ControlCenter = ({ list }) => {
               </> 
           )}
 
+            {showStack && (
+              <>
+              <label>Stack:</label>
+              <div className="icon-container">
+                <div className={`chart-icon ${Stack === "Total" ? "active" : ""}`} onClick={() => handleStackChange("Total")}>
+                  <input type="checkbox" checked={Stack === "Total"} onChange={() => handleStackChange("Total")}/>
+                    Total
+                </div>
+                <div className={`chart-icon ${Stack === "" ? "active" : ""}`} onClick={() => handleStackChange("")}>
+                  <input type="checkbox" checked={Stack === ""} onChange={() => handleStackChange("")}/>
+                    None
+                </div>
+              </div>
+              </>
+            )}    
+
+          {showTheme && (
+          <>
           <label htmlFor="type">Theme</label>
           <div className="icon-container">
             <div className={`chart-icon ${Theme === "essos" ? "active" : ""}`} onClick={() => handleThemeChange("essos")}>
@@ -613,6 +792,8 @@ const ControlCenter = ({ list }) => {
               Shine 
             </div>
           </div>
+          </>
+          )}
    
             <button onClick={handleAddChartChange}>Add Chart</button>     
            
@@ -624,11 +805,7 @@ const ControlCenter = ({ list }) => {
             
             {selectedChartId !== null && (
                 <button onClick={handleUpdateChartChange}>Update Chart</button>
-            )}  
-
-            { selectedChartId !== null && (
-                <button onClick={handleResetChart}>Reset</button>
-            )}  
+            )}   
           
             </Scroll>
         </ControlWrap>
@@ -647,7 +824,7 @@ const ControlCenter = ({ list }) => {
             draggableCancel=".disable-drag"
           >
           {charts.map((chart) => {
-            if (chart.type !== 'table' && chart.type !== 'chartable') {
+            if (chart.type !== 'table' && chart.type !== 'chartable' && chart.type !== 'textbox') {
               return (
                 <div
                   key={chart.chartId}
@@ -663,12 +840,14 @@ const ControlCenter = ({ list }) => {
                       (param) => param !== undefined && columnTypes[param] === "int"
                     )}
                     title={chart.title}
+                    subtitle={chart.subtitle}
                     type={chart.type}
                     theme={chart.theme}
                     onRemoveChart={handleRemoveChart}
                     onSelectChart={setSelectedChartId} 
                     onChartID={handleChartIdChange} 
-                             
+                    stack={chart.stack}
+                    onResetChart={handleResetChart}         
                   />
                 </div>
               );
@@ -688,7 +867,8 @@ const ControlCenter = ({ list }) => {
                     SummaryStat={chart.SummaryStat}
                     onRemoveChart={handleRemoveChart}
                     onSelectChart={setSelectedChartId} 
-                    onChartID={handleChartIdChange}   
+                    onChartID={handleChartIdChange}
+                    onResetChart={handleResetChart}    
                   />
                 </div>
               );
@@ -703,6 +883,8 @@ const ControlCenter = ({ list }) => {
                     <Table
                       key={chart.chartId}
                       chartId={chart.chartId}
+                      title={chart.title}
+                      subtitle={chart.subtitle}
                       TabData={chart.TabData}
                       xAxisParam={chart.xAxisParam}
                       yAxisParam={chart.yAxisParam.filter(
@@ -714,10 +896,29 @@ const ControlCenter = ({ list }) => {
                       onRemoveChart={handleRemoveChart}
                       onSelectChart={setSelectedChartId} 
                       onChartID={handleChartIdChange}
+                      onResetChart={handleResetChart} 
                     />
                   </Scroll>
               </div>
             )
+          } else if (chart.type === 'textbox') {
+            return (
+              <div
+                key={chart.chartId}
+                className="stat-border"
+                data-grid={{ w: 1.5, h: 1, x: 0, y: 0 }}
+              >
+                <Text
+                  key={chart.chartId}
+                  chartId={chart.chartId}
+                  onRemoveChart={handleRemoveChart}
+                  onSelectChart={setSelectedChartId} 
+                  onChartID={handleChartIdChange} 
+                  onTextCopy={handleTextCopy}
+                  onResetChart={handleResetChart} 
+                />
+              </div>
+            );
           }
         })}     
     </ResponsiveGridLayout>
@@ -725,28 +926,33 @@ const ControlCenter = ({ list }) => {
     </>
 )};
 
-const SummaryStatistic = ({
+const Text = ({
   chartId,
-  resStat,
-  SeriesOption,
-  type,
-  SummaryStat,
   onRemoveChart,
   onSelectChart,
   onChartID,
-
+  onTextCopy,
 }) => {
   const [isReady, setIsReady] = useState(false);
+  const [Text, setText] = useState('')
+  const [SubText, setSubText] = useState('')
+  const [selectedChartId, setSelectedChartId] = useState(null);
 
-  useEffect(() => {
-    if (SummaryStat) {
-        setIsReady(true);
-    }
-  }, [SeriesOption, SummaryStat, resStat]);
+  const handleTextChange = (e) => {
+    const newText = e.target.value;
+    setText(newText);
+    onTextCopy(newText);
+  };
+
+  const handleSubTextChange = (e) => {
+    const newText = e.target.value;
+    setSubText(newText);
+    onTextCopy(newText);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (onSelectChart && event.key === "Backspace") {
+      if (onSelectChart && event.key === "Delete") {
         onRemoveChart(chartId);
       }
     };
@@ -758,29 +964,138 @@ const SummaryStatistic = ({
     };
   }, [chartId, onRemoveChart, onSelectChart]);
 
+  useEffect(() => {
+    document.addEventListener("text", handleTextChange);
+    console.log('copied text:', Text)
+    return () => {
+      document.removeEventListener("text", handleTextChange);
+    };
+  }, [chartId, onTextCopy]);
+
+  const handleSelectChart = () => {
+    setSelectedChartId((prevChartId) => (prevChartId === chartId ? null : chartId));
+    onSelectChart(chartId);
+    onChartID({ target: { value: chartId } });
+  };
+
+  const textStyle = {
+    height: "70%",
+    width: "100%",
+    fontWeight: "bold",
+    fontSize: Text.length > 15 ? `${Math.max(30 - (Text.length - 15) * 2, 14)}px` : "30px",
+    color: "black",
+    whiteSpace: "pre-wrap",
+    border: 'none',
+  };
+
+  const subTextStyle = {
+    height: "30%",
+    width: "100%",
+    fontSize: SubText.length > 25 ? `${Math.max(15 - (SubText.length - 25) * 0.5, 8)}px` : "15px",
+    color: "grey",
+    wordWrap: "break-word",
+    border: 'none',
+  };
+
+
+  return (
+    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }} className={`stat-border ${selectedChartId === chartId ? "selected-chart" : ""}`}>  
+      <input
+        id="Text"
+        value={Text}
+        onChange={handleTextChange}
+        style={textStyle}
+      />   
+      <input
+        id="SubText"
+        value={SubText}
+        onChange={handleSubTextChange}
+        style={subTextStyle}
+      />  
+    </div>
+  );
+}
+
+const SummaryStatistic = ({
+  chartId,
+  resStat,
+  SeriesOption,
+  type,
+  SummaryStat,
+  onRemoveChart,
+  onSelectChart,
+  onChartID,
+  onResetChart,
+}) => {
+  const [isReady, setIsReady] = useState(false);
+  const [selectedChartId, setSelectedChartId] = useState(null);
+
+  useEffect(() => {
+    if (SummaryStat) {
+        setIsReady(true);
+    }
+  }, [SeriesOption, SummaryStat, resStat]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (onSelectChart && event.key === "Delete") {
+        onRemoveChart(chartId);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [chartId, onRemoveChart, onSelectChart]);
+
+  useEffect(() => {
+    const handleResetChart = () => {
+      if (selectedChartId !== null) {
+        onResetChart();
+      }
+    };
+
+    const handleClickOutsideChart = (event) => {
+      const chartElement = document.querySelector(".table-border");
+      if (chartElement && chartElement.contains(event.target)) {
+        handleResetChart();
+      }
+    };
+
+    document.addEventListener("click", handleClickOutsideChart);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutsideChart);
+    };
+  }, [selectedChartId, onResetChart]);
+
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
   }
 
   const handleSelectChart = () => {
+    setSelectedChartId((prevChartId) => (prevChartId === chartId ? null : chartId));
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
   };
 
   return (
         
-    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
+    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }} className={`stat-border ${selectedChartId === chartId ? "selected-chart" : ""}`}> 
       {Object.entries(resStat).map(([key, value]) => (
             <div key={key} className="chart-wrapper">
               <span
                 style={{
-                  fontWeight: "bold",
-                  textDecoration: "underline"
+                  fontSize: "0.8em", // Adjust the font size for the key (top right)
+                  color: "grey", // Set the color to grey for the key (top right)
+                  textAlign: "left",
                 }}
               >
                 {key}
               </span>
-          <span style={{ fontSize: "1.2em" }}>{value}</span>
+          <span style={{ fontSize: "2em", fontWeight: "bold", textAlign: "center",}}>{value}</span>
         </div>
       ))}
     </div> 
@@ -797,7 +1112,11 @@ const Chart = ({
   onRemoveChart,
   onSelectChart,
   onChartID,
+  onResetChart,
   theme,
+  title,
+  subtitle,
+  stack,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
@@ -811,7 +1130,7 @@ const Chart = ({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (onSelectChart && event.key === "Backspace") {
+      if (onSelectChart && event.key === "Delete") {
         onRemoveChart(chartId);
       }
     };
@@ -823,6 +1142,29 @@ const Chart = ({
     };
   }, [chartId, onRemoveChart, onSelectChart]);
 
+  useEffect(() => {
+    const handleResetChart = () => {
+      if (selectedChartId !== null) {
+        onResetChart();
+      }
+    };
+
+    const handleClickOutsideChart = (event) => {
+      const chartElement = document.querySelector(".chart-border");
+      if (chartElement && chartElement.contains(event.target)) {
+        if (!chartElement.classList.contains("selected-chart")) {
+          handleResetChart();
+        }
+      }
+    };
+
+    document.addEventListener("click", handleClickOutsideChart);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutsideChart);
+    };
+  }, [selectedChartId, onResetChart]);
+
   if (!isReady ) {
       return null; // Don't render the chart if the necessary variables are not ready
   }
@@ -832,7 +1174,7 @@ const Chart = ({
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
   };
-  
+
   const getOptions = () => {
     if (!sortedData ) {
       return {}; // Exit early if sortedData or yAxisData is not available
@@ -845,6 +1187,7 @@ const Chart = ({
 
       if (type !== 'pie' && type !== 'donut') {
         console.log('Chart Type:', type)
+        console.log('Stack:', stack)
         // Compute mid_x and mid_y only for pie and donut chart types
         const middleIndex = Math.floor(xAxisData.length / 2);
         mid_x = xAxisData[middleIndex];
@@ -886,8 +1229,10 @@ const Chart = ({
             name: yAxisParam,
             data: yAxisData.map((data) => data[i]),
             type: type,
+            stack: stack,
+            areaStyle: stack === 'Total' ? {} : null,     
             endLabel: {
-              show: true,
+              show: false,
               offset: [-20.5, -13.5]
             },
             markPoint: {
@@ -898,10 +1243,11 @@ const Chart = ({
                 ...midYValues
               ],
               symbol: "pin",
+              symbolSize: 0,
               label: {
-                show: true,
-                position: "inside",
-                color: '#fff',
+                show: stack === 'Total' ? false : true,
+                position: "top",
+                color: 'black',
               }
             },
             emphasis: {
@@ -912,12 +1258,21 @@ const Chart = ({
           };
           series.push(seriesItem);
           legendData.push(yAxisParam);
+          
         });
       }
     
       return {
+        title: {
+          text: title,
+          subtext: subtitle,
+          show: true,
+          itemGap: 2
+        },
         legend: {
           show: type === "pie" || type === 'donut' ? false : true,
+          bottom: "0%"
+          
         },
         tooltip: {
           show: type === "pie" ? true : false,
@@ -945,6 +1300,10 @@ const Chart = ({
         console.log('sortedData:', sortedData)
         console.log('yAxisParams:', yAxisParam)
         return {
+          title: {
+            text: title,
+            show: true
+          },
           xAxis: {
             type: "category",
             data: yAxisParam,
@@ -971,10 +1330,15 @@ const Chart = ({
         return [item[0], item[1], item[2] || '-'];
       });
       return {
+        title: {
+          text: title,
+          show: true
+        },
         grid: {
           height: '50%',
           top: '10%'
         },
+        
         xAxis: {
           type: 'category',
           data: xAxisData,     
@@ -1029,6 +1393,9 @@ const Table = ({
   onRemoveChart,
   onSelectChart,
   onChartID,
+  onResetChart,
+  title,
+  subtitle,
 }) => {
 
   const [isReady, setIsReady] = useState(false);
@@ -1042,7 +1409,7 @@ const Table = ({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (onSelectChart && event.key === "Backspace") {
+      if (onSelectChart && event.key === "Delete") {
         onRemoveChart(chartId);
       }
     };
@@ -1054,13 +1421,33 @@ const Table = ({
     };
   }, [chartId, onRemoveChart, onSelectChart]);
 
-  
+  useEffect(() => {
+    const handleResetChart = () => {
+      if (selectedChartId !== null) {
+        onResetChart();
+      }
+    };
+
+    const handleClickOutsideChart = (event) => {
+      const chartElement = document.querySelector(".table-border");
+      if (chartElement && chartElement.contains(event.target)) {
+        handleResetChart();
+      }
+    };
+
+    document.addEventListener("click", handleClickOutsideChart);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutsideChart);
+    };
+  }, [selectedChartId, onResetChart]);
+
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
   }
 
   const handleSelectChart = () => {
-    setSelectedChartId(chartId);
+    setSelectedChartId((prevChartId) => (prevChartId === chartId ? null : chartId));
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
   };
@@ -1069,7 +1456,9 @@ const Table = ({
   console.log("Columns:", columns);
 
   return (
-    <div  onClick={handleSelectChart} style={{ height: "100%", width: "100%" }}>
+    <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }} className={`table-border ${selectedChartId === chartId ? "selected-chart" : ""}`}>  
+      <h3 style={{ marginBottom: "0px", fontSize: "20px", fontWeight: 'bold' }}>{title}</h3>
+      <p style={{ marginTop: "0", fontSize: "15px" }}>{subtitle}</p>
         <ReactTable
           // filterable
           data={TabData}
@@ -1084,6 +1473,6 @@ const Table = ({
   );
 };
 
-export { ControlCenter, Chart, Table };
+export { ControlCenter, Chart, Table,  };
 
 
