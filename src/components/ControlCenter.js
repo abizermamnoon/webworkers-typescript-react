@@ -70,6 +70,7 @@ const ControlCenter = ({ list }) => {
     const [Stack, setStack] = useState('');
     const [showStack, setShowStack] = useState(false);
     const [showTitle, setShowTitle] = useState(false);
+    const [showInterval, setShowInterval] = useState(false);
     const [SummaryStat, setSummaryStat] = useState("");
     const [resStat, setResStat] = useState({});
     const [chartId, setChartId] = useState(1);
@@ -195,6 +196,9 @@ const ControlCenter = ({ list }) => {
           setDataProcessed(false)
           const isDatetime = columnTypes[value] === "datetime";
           setShowDatetime(isDatetime);
+          if (type === 'heatmap' && columnTypes[value] !== "datetime"){
+            alert("Heatmap takes only datetime values");
+          }
         };
 
         const handleTextCopy = (text) => {
@@ -234,6 +238,7 @@ const ControlCenter = ({ list }) => {
           if (chartContainer && !chartContainer.contains(event.target)) {
             if (selectedChartId !== null) {
               handleResetChart();
+              setSelectedChartId(null);
             }
           }
         };
@@ -346,6 +351,7 @@ const ControlCenter = ({ list }) => {
           setTheme('');
           setThemeChange();
           setStack('');
+          setShowDatetime(false)
       } else if (type === 'table') {
         const newChart = {
           chartId: chartId,
@@ -399,6 +405,7 @@ const ControlCenter = ({ list }) => {
           setChartId((prevId) => prevId + 1);
           setChartIdList((prevList) => [...prevList, chartId + 1]);
           setDataProcessed(false);
+          setShowDatetime(false)
       } else if (type === 'textbox') {
         const newChart = {
           chartId: chartId,
@@ -460,6 +467,7 @@ const ControlCenter = ({ list }) => {
           setShowStack(true)
           setShowTheme(true)
           setShowTitle(true)
+          setShowInterval(true)
         } else if (selectedType === "pie" || selectedType === "donut" || selectedType === "boxplot") {
           setShowxAxis(false);
           setShowSeries(true);
@@ -467,6 +475,7 @@ const ControlCenter = ({ list }) => {
           setShowStack(false);
           setShowTheme(true)
           setShowTitle(true)
+          setShowInterval(false)
         } else if (selectedType === "table") {
           setShowxAxis(false);
           setShowSeries(false);
@@ -474,6 +483,7 @@ const ControlCenter = ({ list }) => {
           setShowTitle(false)
           setShowStack(false)
           setShowTheme(false)
+          setShowInterval(false)
         } else if (selectedType === "chartable") {
           setShowxAxis(true);
           setShowSeries(true)
@@ -482,12 +492,15 @@ const ControlCenter = ({ list }) => {
           setShowStack(false)
           setShowTheme(false)
           setShowTitle(true)
+          setShowInterval(true)
         } else if (selectedType === "heatmap") {
           setShowxAxis(true);
           setShowSeries(true)
           setShowStats(false);
           setShowStack(false)
           setShowTitle(true)
+          setShowTheme(true)
+          setShowInterval(true)
         } else if (selectedType === "textbox") {
           setShowxAxis(false);
           setShowSeries(false);
@@ -495,6 +508,7 @@ const ControlCenter = ({ list }) => {
           setShowStack(false)
           setShowTheme(false)
           setShowTitle(false)
+          setShowInterval(false)
         } else if ( selectedType === "scatter" ) {
           setShowxAxis(true);
           setShowSeries(true);
@@ -502,11 +516,12 @@ const ControlCenter = ({ list }) => {
           setShowStack(false)
           setShowTheme(true)
           setShowTitle(true)
+          setShowInterval(true)
         }
       };
 
       const handleResetChart = () => {
-        if (type !== 'table') {
+        
           setXAxisParam("");
           setYAxisParams([]);
           setType("");
@@ -514,13 +529,9 @@ const ControlCenter = ({ list }) => {
           setSelectedChartId(null)
           setDataProcessed(false);
           setTheme('');
-        } else if (type === 'table') {
-          setType("");
-          setSeriesOption("")
-          setSummaryStat("")
-          setSelectedChartId(null)
-          setDataProcessed(false);
-        }
+          setSeriesOption("");
+          setSummaryStat("");
+        
       };
 
       const handleHideTable = () => {
@@ -722,7 +733,7 @@ const ControlCenter = ({ list }) => {
           </>
         )}
           
-          {showDatetime && (
+          {showDatetime && showInterval && (
             <>
               <label>Interval:</label>
               <div className="icon-container">
@@ -828,7 +839,7 @@ const ControlCenter = ({ list }) => {
               return (
                 <div
                   key={chart.chartId}
-                  className="chart-border"
+                  className={`chart-border ${selectedChartId === chartId ? "selected-chart" : ""}`}
                   data-grid={{ w: 2, h: 2, x: 0, y: 0 }}
                 >
                   <Chart
@@ -1051,25 +1062,10 @@ const SummaryStatistic = ({
   }, [chartId, onRemoveChart, onSelectChart]);
 
   useEffect(() => {
-    const handleResetChart = () => {
-      if (selectedChartId !== null) {
-        onResetChart();
-      }
-    };
-
-    const handleClickOutsideChart = (event) => {
-      const chartElement = document.querySelector(".table-border");
-      if (chartElement && chartElement.contains(event.target)) {
-        handleResetChart();
-      }
-    };
-
-    document.addEventListener("click", handleClickOutsideChart);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutsideChart);
-    };
-  }, [selectedChartId, onResetChart]);
+    if (selectedChartId === null) {
+      onResetChart();
+    }
+}, [selectedChartId]);
 
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
@@ -1121,12 +1117,17 @@ const Chart = ({
 
   const [isReady, setIsReady] = useState(false);
   const [selectedChartId, setSelectedChartId] = useState(null);
+  const [showSelectedChart, setShowSelectedChart] = useState(false);
 
   useEffect(() => {
       if (yAxisParam) {
           setIsReady(true);
       }
   }, [xAxisParam, yAxisParam, sortedData]);
+
+  useEffect(() => {
+    console.log('selected chartID:', selectedChartId)
+}, [selectedChartId]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -1143,27 +1144,10 @@ const Chart = ({
   }, [chartId, onRemoveChart, onSelectChart]);
 
   useEffect(() => {
-    const handleResetChart = () => {
-      if (selectedChartId !== null) {
+      if (selectedChartId === null) {
         onResetChart();
       }
-    };
-
-    const handleClickOutsideChart = (event) => {
-      const chartElement = document.querySelector(".chart-border");
-      if (chartElement && chartElement.contains(event.target)) {
-        if (!chartElement.classList.contains("selected-chart")) {
-          handleResetChart();
-        }
-      }
-    };
-
-    document.addEventListener("click", handleClickOutsideChart);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutsideChart);
-    };
-  }, [selectedChartId, onResetChart]);
+  }, [selectedChartId]);
 
   if (!isReady ) {
       return null; // Don't render the chart if the necessary variables are not ready
@@ -1173,6 +1157,7 @@ const Chart = ({
     setSelectedChartId((prevChartId) => (prevChartId === chartId ? null : chartId));
     onSelectChart(chartId);
     onChartID({ target: { value: chartId } });
+    setShowSelectedChart(true)
   };
 
   const getOptions = () => {
@@ -1181,6 +1166,14 @@ const Chart = ({
     } else if (type !== 'boxplot' && type !== 'heatmap') {
       const xAxisData = sortedData.xAxisData;
       const yAxisData = sortedData.yAxisData;
+      const yAxisAxisLabelMaxLength = 2; // Adjust the maximum length you want
+      const yAxisAxisLabel = yAxisData.map((data, index) => {
+        const label = xAxisData[index].toString();
+        if (label.length > yAxisAxisLabelMaxLength) {
+          return label.slice(0, yAxisAxisLabelMaxLength) + '...'; // Truncate with '...' if needed
+        }
+        return label;
+      });
       console.log('sorted Data:', sortedData)
       let mid_x = null; // Initialize mid_x as null
       let mid_y = null; // Initialize mid_y as null
@@ -1292,6 +1285,15 @@ const Chart = ({
         yAxis: {
           silent: true,
           type: "value",
+          axisLabel: {
+            formatter: (value) => {
+              const label = value.toString();
+              if (label.length > yAxisAxisLabelMaxLength) {
+                return label.slice(0, yAxisAxisLabelMaxLength) + '...'; // Truncate with '...' if needed
+              }
+              return label;
+            },
+          },
         },
         series: series,
       };
@@ -1422,25 +1424,10 @@ const Table = ({
   }, [chartId, onRemoveChart, onSelectChart]);
 
   useEffect(() => {
-    const handleResetChart = () => {
-      if (selectedChartId !== null) {
-        onResetChart();
-      }
-    };
-
-    const handleClickOutsideChart = (event) => {
-      const chartElement = document.querySelector(".table-border");
-      if (chartElement && chartElement.contains(event.target)) {
-        handleResetChart();
-      }
-    };
-
-    document.addEventListener("click", handleClickOutsideChart);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutsideChart);
-    };
-  }, [selectedChartId, onResetChart]);
+    if (selectedChartId === null) {
+      onResetChart();
+    }
+}, [selectedChartId]);
 
   if (!isReady ) {
     return null; // Don't render the chart if the necessary variables are not ready
