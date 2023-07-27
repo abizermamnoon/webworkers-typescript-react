@@ -19,21 +19,25 @@ import essos from '../themes/essos.js';
 import westeros from '../themes/westeros.js'
 import infographic from '../themes/infographic.js';
 import shine from '../themes/shine.js';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChartLine, faChartPie, faChartColumn, faTable, faTarp, faNoteSticky, faTableCells, faVectorSquare, faBraille, faBatteryHalf, faChartBar, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { ChartScatter} from 'react-flaticons';
+import boxplot_image from './boxplot_image.png'
+import heatmap_image from './heatmap_image.png'
+import donut_image from './donut_image.png'
+import donut_icon from './donut_icon.png'
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Nav = styled.div`
-  background: white;
+  background: ivory;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  
-  
 `;
  
 const ControlNav = styled.nav`
-  background: white;
+  background: ivory;
   width: 200px;
   height: 100vh;
   display: flex;
@@ -584,6 +588,24 @@ const ControlCenter = ({ list }) => {
         
       };
 
+      useEffect(() => {
+        const handleKeyDown = (event) => {
+          if (event.key === "Enter") {
+            if (dataProcessed && selectedChartId === null) {
+              handleAddChartChange();
+            } else if (dataProcessed && selectedChartId !== null) {
+              handleUpdateChartChange();
+            }
+          }
+        };
+      
+        document.addEventListener("keydown", handleKeyDown);
+      
+        return () => {
+          document.removeEventListener("keydown", handleKeyDown);
+        };
+      }, [dataProcessed, selectedChartId, handleAddChartChange, handleUpdateChartChange]);
+
       return (
         <>
         <Nav>
@@ -595,14 +617,15 @@ const ControlCenter = ({ list }) => {
               fontWeight: "bold", // Make the text bold for emphasis
               letterSpacing: "1px", // Add slight letter spacing for a stylish look
               lineHeight: "1.2", // Adjust line height for better readability
-              color: "#333"
+              color: "#333",
+              backgroundColor: "ivory",
        }} // Set the font color for better contrast}}
             />
           
-            <button onClick={showControl}>Control Center</button>  
+            <button onClick={showControl}>Build Visual</button>  
           </Nav>
-        <div className='box-container' >
         
+          <div className='box-container'>
         <IconContext.Provider value={{ color: "black" }}>
        
        <ControlNav control={control}>
@@ -614,43 +637,43 @@ const ControlCenter = ({ list }) => {
           <div className="icon-container">
           <div className={`chart-icon ${type === "line" ? "active" : ""}`} onClick={() => handleTypeChange("line")}>
           <input type="checkbox" checked={type === "line"} onChange={() => handleTypeChange("line")}/>
-            Line 
+          <FontAwesomeIcon icon={faChartLine} /> Line 
           </div>
           <div className={`chart-icon ${type === "bar" ? "active" : ""}`} onClick={() => handleTypeChange("bar")}>
           <input type="checkbox" checked={type === "bar"} onChange={() => handleTypeChange("bar")}/>
-            Bar
+          <FontAwesomeIcon icon={faChartColumn} /> Bar
           </div>
           <div className={`chart-icon ${type === "pie" ? "active" : ""}`} onClick={() => handleTypeChange("pie")}>
           <input type="checkbox" checked={type === "pie"} onChange={() => handleTypeChange("pie")}/>
-            Pie
+          <FontAwesomeIcon icon={faChartPie} /> Pie
           </div>
           <div className={`chart-icon ${type === "scatter" ? "active" : ""}`} onClick={() => handleTypeChange("scatter")}>
           <input type="checkbox" checked={type === "scatter"} onChange={() => handleTypeChange("scatter")}/>
-            Scatter
+          <ChartScatter />Scatter
           </div>
           <div className={`chart-icon ${type === "donut" ? "active" : ""}`} onClick={() => handleTypeChange("donut")}>
           <input type="checkbox" checked={type === "donut"} onChange={() => handleTypeChange("donut")}/>
-            Doughnut
+          <img src={donut_icon} alt="Donut icon" /> Doughnut
           </div>
           <div className={`chart-icon ${type === "table" ? "active" : ""}`} onClick={() => handleTypeChange("table")}>
           <input type="checkbox" checked={type === "table"} onChange={() => handleTypeChange("table")}/>
-            Card
+          <FontAwesomeIcon icon={faTarp} />Card
           </div>
           <div className={`chart-icon ${type === "chartable" ? "active" : ""}`} onClick={() => handleTypeChange("chartable")}>
           <input type="checkbox" checked={type === "chartable"} onChange={() => handleTypeChange("chartable")}/>
-            Chart Table
+          <FontAwesomeIcon icon={faTable} />Chart Table
           </div>
           <div className={`chart-icon ${type === "boxplot" ? "active" : ""}`} onClick={() => handleTypeChange("boxplot")}>
           <input type="checkbox" checked={type === "boxplot"} onChange={() => handleTypeChange("boxplot")}/>
-            Box Plot
+          <FontAwesomeIcon icon={faBatteryHalf} />  Box Plot
           </div>
           <div className={`chart-icon ${type === "heatmap" ? "active" : ""}`} onClick={() => handleTypeChange("heatmap")}>
           <input type="checkbox" checked={type === "heatmap"} onChange={() => handleTypeChange("heatmap")}/>
-            Heat Map
+          <FontAwesomeIcon icon={faBraille} /> Heat Map
           </div>
           <div className={`chart-icon ${type === "textbox" ? "active" : ""}`} onClick={() => handleTypeChange("textbox")}>
           <input type="checkbox" checked={type === "textbox"} onChange={() => handleTypeChange("textbox")}/>
-            Text Box
+          <FontAwesomeIcon icon={faVectorSquare} /> Text Box
           </div>
       </div>
 
@@ -684,7 +707,10 @@ const ControlCenter = ({ list }) => {
                   {columnOptions.map((column, index) => (
                     <div key={index} className={`chart-icon ${xAxisParam === column ? "active" : ""}`} onClick={() => handleXAxisChange(column)}>
                       <input type="checkbox" checked={xAxisParam === column} onChange={() => handleXAxisChange(column)}/>
-                      {column} ({columnTypes[column]})
+                      {`${column} `}
+                      <span style={{ fontWeight: columnTypes[column] === "string" ? "bold" : "normal" }}>
+                        {columnTypes[column] === "string" ? <strong>Str</strong> : columnTypes[column] === "int" ? <strong style={{ fontWeight: "bold" }}>123</strong> : <FontAwesomeIcon icon={faCalendarDays} />}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -698,7 +724,10 @@ const ControlCenter = ({ list }) => {
                   {columnOptions.map((column, index) => (
                     <div key={index} className={`chart-icon ${SeriesOption === column ? "active" : ""}`} onClick={() => handleSeriesOptionChange(column)}>
                       <input type="checkbox" checked={SeriesOption === column} onChange={() => handleSeriesOptionChange(column)}/>
-                      {column} ({columnTypes[column]})
+                      {`${column} `}
+                      <span style={{ fontWeight: columnTypes[column] === "string" ? "bold" : "normal" }}>
+                        {columnTypes[column] === "string" ? <strong>Str</strong> : columnTypes[column] === "int" ? <strong style={{ fontWeight: "bold" }}>123</strong> : <FontAwesomeIcon icon={faCalendarDays} />}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -759,7 +788,10 @@ const ControlCenter = ({ list }) => {
                   {columnOptions.map((column, index) => (
                     <div key={index} className={`chart-icon ${ yAxisParams[index] === column && ((columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'pie' || yAxisParams[index] === column && type === 'chartable' || yAxisParams[index] === column && type === 'donut') ? "active" : ""}`} onClick={() => handleYAxisChange(column, index)}>
                       <input type="checkbox" checked={yAxisParams[index] === column && ((type === 'pie') || yAxisParams[index] === column && (columnTypes[column] === 'int' && type !== 'pie') || yAxisParams[index] === column && type === 'chartable' || yAxisParams[index] === column && type === 'donut')} onChange={() => handleYAxisChange(column, index)} />
-                      {column} ({columnTypes[column]})
+                      {`${column} `}
+                      <span style={{ fontWeight: columnTypes[column] === "string" ? "bold" : "normal" }}>
+                        {columnTypes[column] === "string" ? <strong>Str</strong> : columnTypes[column] === "int" ? <strong style={{ fontWeight: "bold" }}>123</strong> : <FontAwesomeIcon icon={faCalendarDays} />}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -813,10 +845,6 @@ const ControlCenter = ({ list }) => {
             Data processed...
           </div>
           )}
-            
-            {selectedChartId !== null && (
-                <button onClick={handleUpdateChartChange}>Update Chart</button>
-            )}   
           
             </Scroll>
         </ControlWrap>
@@ -1130,6 +1158,10 @@ const Chart = ({
 }, [selectedChartId]);
 
   useEffect(() => {
+    console.log('sortedData:', sortedData.length)
+  }, [sortedData]);
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if (onSelectChart && event.key === "Delete") {
         onRemoveChart(chartId);
@@ -1161,19 +1193,24 @@ const Chart = ({
   };
 
   const getOptions = () => {
-    if (!sortedData ) {
-      return {}; // Exit early if sortedData or yAxisData is not available
-    } else if (type !== 'boxplot' && type !== 'heatmap') {
+    if (type === 'line' || type === 'pie' || type === 'bar' || type === 'scatter' || type === 'donut' ) {
       const xAxisData = sortedData.xAxisData;
       const yAxisData = sortedData.yAxisData;
-      const yAxisAxisLabelMaxLength = 2; // Adjust the maximum length you want
-      const yAxisAxisLabel = yAxisData.map((data, index) => {
-        const label = xAxisData[index].toString();
-        if (label.length > yAxisAxisLabelMaxLength) {
-          return label.slice(0, yAxisAxisLabelMaxLength) + '...'; // Truncate with '...' if needed
+      
+      const formatYAxisLabel = (value) => {
+        if (value >= 1000000000) {
+          return (value / 1000000000).toFixed(0) + 'B';
+        } else if (value >= 1000000) {
+          return (value / 1000000).toFixed(0) + 'M';
+        } else if (value >= 1000) {
+          return (value / 1000).toFixed(0) + 'K';
+        } else {
+          return value;
         }
-        return label;
-      });
+      };
+      const yAxisFormatter = (value) => {
+        return formatYAxisLabel(value);
+      };
       console.log('sorted Data:', sortedData)
       let mid_x = null; // Initialize mid_x as null
       let mid_y = null; // Initialize mid_y as null
@@ -1246,6 +1283,9 @@ const Chart = ({
             emphasis: {
               disabled: true
             },
+            label: {
+              show: stack === 'Total' ? true : false,
+            },
             silent: true,
             animation: false,
           };
@@ -1259,8 +1299,8 @@ const Chart = ({
         title: {
           text: title,
           subtext: subtitle,
-          show: true,
-          itemGap: 2
+          show: type === "pie" || type === 'donut' ? false : true,
+          itemGap: 2,
         },
         legend: {
           show: type === "pie" || type === 'donut' ? false : true,
@@ -1286,21 +1326,30 @@ const Chart = ({
           silent: true,
           type: "value",
           axisLabel: {
-            formatter: (value) => {
-              const label = value.toString();
-              if (label.length > yAxisAxisLabelMaxLength) {
-                return label.slice(0, yAxisAxisLabelMaxLength) + '...'; // Truncate with '...' if needed
-              }
-              return label;
-            },
+            formatter: (value) => yAxisFormatter(value),
           },
         },
         series: series,
       };
-    } else if (type === 'boxplot') {
+    } if (type === 'boxplot') {
         console.log('type:', type)
         console.log('sortedData:', sortedData)
         console.log('yAxisParams:', yAxisParam)
+        console.log('in boxplot')
+        const formatYAxisLabel = (value) => {
+          if (value >= 1000000000) {
+            return (value / 1000000000).toFixed(0) + 'B';
+          } else if (value >= 1000000) {
+            return (value / 1000000).toFixed(0) + 'M';
+          } else if (value >= 1000) {
+            return (value / 1000).toFixed(0) + 'K';
+          } else {
+            return value;
+          }
+        };
+        const yAxisFormatter = (value) => {
+          return formatYAxisLabel(value);
+        };
         return {
           title: {
             text: title,
@@ -1312,6 +1361,9 @@ const Chart = ({
           },
           yAxis: {
             type: "value",
+            axisLabel: {
+              formatter: (value) => yAxisFormatter(value),
+            },
           },
           series: [{
             name: "boxplot",
@@ -1323,7 +1375,7 @@ const Chart = ({
             disabled: true
           }
         };
-    } else if (type === 'heatmap') {
+    } if (type === 'heatmap') {
       const xAxisData = sortedData.xAxisData;
       const yAxisData = sortedData.yAxisData;
       const min = sortedData.min;
@@ -1374,16 +1426,76 @@ const Chart = ({
   };
   
     return ( 
-      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%" }} className={`chart-border ${selectedChartId === chartId ? "selected-chart" : ""}`}>  
+      <div onClick={handleSelectChart} style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column"}} className={`chart-border ${selectedChartId === chartId ? "selected-chart" : ""}`}> 
+      {!sortedData.yAxisData && (type === 'pie') && (
+        <>
+          <FontAwesomeIcon icon={faChartPie} style={{ height: "100%", width: "100%"}}/>
+        </>
+      )}
+      {!sortedData.yAxisData && (type === 'donut') && (
+        <>
+          <img src={donut_image} alt="Donut Image" style={{ height: "100%", width: "100%"}} />
+        </>
+      )}
+      {!sortedData.yAxisData && (type === 'line') && (
+        <>
+          <FontAwesomeIcon icon={faChartLine} style={{ height: "100%", width: "100%"}}/>
+        </>
+      )}
+      {!sortedData.yAxisData && (type === 'scatter') && (
+        <>
+          <ChartScatter style={{ height: "100%", width: "100%"}}/>
+        </>
+      )}
+      {!sortedData.yAxisData && (type === 'bar') && (
+        <>
+          <FontAwesomeIcon icon={faChartColumn} style={{ height: "100%", width: "100%"}}/>
+        </>
+      )}
+      {yAxisParam.length === 0 && (type === 'boxplot') && (
+        <>
+          <img src={boxplot_image} alt="Boxplot Image" style={{ height: "100%", width: "100%"}} />
+        </>
+      )}
+      {!sortedData.yAxisParam && (type === 'heatmap') && (
+        <>
+          <img src={heatmap_image} alt="Heatmap Image" style={{ height: "100%", width: "100%"}} />
+        </>
+      )}
+      {sortedData.yAxisData && (type === 'pie' || type === 'donut') && (
+        <>
+        <div style={{height: "15%", width: "100%"}}>
+        <h3 style={{ marginBottom: "0px", fontSize: "20px", fontWeight: 'bold' }}>{title}</h3>
+        <p style={{ marginTop: "0", fontSize: "15px" }}>{subtitle}</p>
+        </div>
+        <div style={{height: "95%", width: "100%"}}>
+        <ReactEcharts 
+        option={getOptions()} 
+        style={{ height: "90%", width: "100%" }} 
+        chartId={chartId}
+        theme={theme}
+        />
+        </div>
+        </>
+      )}
+      {!(type === 'pie' || type === 'donut' ) &&  sortedData.yAxisData && (
         <ReactEcharts 
           option={getOptions()} 
           style={{ height: "100%", width: "100%" }} 
           chartId={chartId}
           theme={theme}
         />
-      </div>
-      
-      
+      )}
+
+    {(type === 'boxplot' || type === 'heatmap' ) &&  sortedData.length > 0 && (
+        <ReactEcharts 
+          option={getOptions()} 
+          style={{ height: "100%", width: "100%" }} 
+          chartId={chartId}
+          theme={theme}
+        />
+      )}
+      </div>  
     );
 };
 

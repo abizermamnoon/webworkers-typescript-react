@@ -7,7 +7,7 @@ import './index.css'
 import Sidebar from "./sidebar/Sidebar"
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Table from './Table.js'
-import UploadFile from './UploadFile'
+import { UploadFile } from './UploadFile'
 
 export const listPageSize = 10000;
 
@@ -65,7 +65,7 @@ const App = () => {
   }, [profileList.page]);
 
   return (
-    <main className="main-container" >  
+    <div className="main-container" >  
       <Router>
         <Sidebar />
         <Routes>
@@ -74,7 +74,7 @@ const App = () => {
           <Route path='/' element={<UploadFile />} />
         </Routes>
       </Router>
-  </main>
+  </div>
 );
         };
 

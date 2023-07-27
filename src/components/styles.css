@@ -71,6 +71,7 @@ transform: translateY(0); /* Reset the row's position */
 
 .chart-border  {
   border: 0.5px solid grey;
+  background-color: white;
 } 
 
 .stat-border  {
@@ -80,6 +81,7 @@ transform: translateY(0); /* Reset the row's position */
 
 .table-border  {
   border: 0.5px solid #000;
+  background-color: white;
 }
 
 .compact-table {

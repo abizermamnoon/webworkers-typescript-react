@@ -7,7 +7,7 @@ import { SidebarData } from "./SidebarData";
 import { IconContext } from "react-icons/lib";
  
 const Nav = styled.div`
-  background: white;
+  background: ivory;
   height: 30px;
   display: flex;
   justify-content: flex-start;

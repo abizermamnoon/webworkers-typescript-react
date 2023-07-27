@@ -10,7 +10,7 @@ import * as AiIcons from "react-icons/ai";
 import Scroll from "./container/Scroll/Scroll";
 
 const Nav = styled.div`
-  background: white;
+  background: ivory;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -18,7 +18,7 @@ const Nav = styled.div`
 `;
  
 const TabNav = styled.nav`
-  background: white;
+  background: ivory;
   width: 200px;
   height: 100vh;
   display: flex;
@@ -36,10 +36,35 @@ const ControlWrap = styled.div`
   position: relative;
 `;
 
+const loadButtonStyles = {
+    display: "block",
+    margin: "10px", // To center the button
+    marginLeft: "400px",
+    width: "100px",   // Adjust the width as needed
+    height: "50px",   // Adjust the height as needed
+    fontSize: "18px", // Adjust the font size as needed
+    fontWeight: "bold", // Adjust the font weight as needed
+    textAlign: "center",
+  };
+
+const CustomTable = styled(ReactTable)`
+/* Add your custom table styles here */
+background-color: #f2f2f2;
+height: 400px;
+`;
+
+const CustomTr = styled.tr`
+  /* Add your custom row styles here */
+  &:nth-child(even) {
+    background-color: #00ff00;
+  }
+`;
+
 const UploadFile = () => {
     const [file, setFile] = useState([]);
     const [data, getFile] = useState({ name: "", path: "" });
     const [columns, setColumns] = useState([]);
+    const [tabData, setTabData] = useState([]);
     const [nuldata, setNulData] = useState([]);
     const [progress, setProgess] = useState(0);
     const el = useRef();
@@ -60,6 +85,7 @@ const UploadFile = () => {
     const [DropNaVal, setDropNaVal] = useState(false);
     const [tabview, setTabView] = useState(true);
     const [selectedFiles, setSelectedFiles] = useState(null);
+    
     const showTabView = () => setTabView(!tabview);
 
     const uploadFile = () => {
@@ -128,7 +154,7 @@ const UploadFile = () => {
     useEffect(() => {  
         if (yAxisParamsToSend.length > 0) {
         axios
-        .post("http://localhost:5000/dropcol", { yAxisParams: yAxisParamsToSend })
+        .post("http://localhost:5000/dropcol", { yAxisParams: yAxisParamsToSend, selectedFiles })
         .then(response => {
             console.log("Result:", response.data);
             setTable(true)
@@ -140,19 +166,39 @@ const UploadFile = () => {
     }, [yAxisParamsToSend]);
 
     const handleSelectedTable = (index) => {
-        setSelectedFiles(index)
+
+        if (selectedFiles === index) {
+            // Clicked file is already selected, so deselect it
+            setSelectedFiles(null);
+        } else {
+            // Clicked file is not selected, so select it
+            setSelectedFiles(index);
+        }
       
         // Assuming the backend endpoint to send the data is '/findtable'
         axios
-          .post("http://localhost:5000/findtable", { selectedFiles: [index] }) // Pass the selectedFiles array
+          .post("http://localhost:5000/findtable", { selectedFiles: index }) // Pass the selectedFiles array
           .then((response) => {
             // Handle the response from the backend if needed
-            console.log("Selected data sent successfully:", response.data);
+            const tableData = response.data
+            createSampTable(tableData);
           })
           .catch((error) => {
             console.error("Error sending selected data:", error);
           });
-      };
+    };
+
+    const createSampTable = tableData => {
+        console.log("Received tableData:", tableData);
+        if (tableData && tableData.columns && tableData.data) {
+          setColumns(tableData.columns);
+          setTabData(tableData.data);
+          setIsTableReady(true); 
+          
+        } else {
+            console.error("Invalid tableData format:", tableData);
+        }
+    };
 
     const handleJoinTable = () => {
         axios
@@ -163,6 +209,14 @@ const UploadFile = () => {
                 setDfJoin(true);
                 setDropColumns(response.data)
                 // Update the state or perform any additional actions
+                const newFileData = {
+                    name: "join_file.csv", // Set the file name
+                    path: "http://localhost:5000/new_file_path", // Set the file path
+                };
+                getFile([...data, newFileData]); // Add the new file data to the existing data state
+    
+                // Set the current file index to the new file index
+                handleSelectedTable(data.length)
             })
             .catch((error) => {
                 console.error("Error performing join:", error);
@@ -174,8 +228,13 @@ const UploadFile = () => {
       }, [DropColumns]);
 
     useEffect(() => {  
-        fetchData();   
-      }, [DfJoin, table, DropNaVal]);
+        const cancelTokenSource = axios.CancelToken.source();
+        fetchData(cancelTokenSource);
+        return () => {
+            // Cancel the Axios request if the component is unmounted
+            cancelTokenSource.cancel("Request canceled due to component unmount.");
+        };
+      }, [DfJoin, table, DropNaVal, selectedFiles]);
     
     useEffect(() => {
     // Whenever data changes, check if it is not empty and hide the file-upload section
@@ -184,23 +243,25 @@ const UploadFile = () => {
     }
     }, [data]);
 
-    const fetchData = () => {
-    axios
-    .post("http://localhost:5000/nullval")
-    .then(response => {
-        const tableData = response.data
-        createTable(tableData);
-        console.log('Received tableData:', tableData);
-    })
-    .catch(error => {
-        console.error("Error retrieving Table Data:", error);
-    });
+    const fetchData = (cancelTokenSource) => {
+        axios
+        .post("http://localhost:5000/nullval", {selectedFiles} )
+        .then(response => {
+            const tableData = response.data
+            createTable(tableData);
+            console.log('Received tableData:', tableData);
+        })
+        .catch(error => {
+            if (!axios.isCancel(error)) {
+                console.error("Error retrieving Table Data:", error);
+              }
+        });
     }
 
     const createTable = tableData => {
         console.log("Received tableData:", tableData);
         if (tableData && tableData.columns && tableData.data) {
-          setColumns(tableData.columns);
+          setColNul(tableData.columns);
           setNulData(tableData.data);
           setIsTableReady(true); 
           
@@ -213,7 +274,7 @@ const UploadFile = () => {
         setIsLoading(true);
         // Send POST request to Flask backend
         axios
-        .post("http://localhost:5000/loadTable")
+        .post("http://localhost:5000/loadTable", {selectedFiles})
         .then(response => {
             // Handle the response from the backend
             console.log("Data_Loaded:", response.data);
@@ -231,12 +292,13 @@ const UploadFile = () => {
         const selectedAction = event.target.value;
         setSelectedAction(selectedAction);
         axios
-        .post("http://localhost:5000/dropna", { action: selectedAction })
+        .post("http://localhost:5000/dropna", { action: selectedAction, selectedFiles })
         .then(response => {
             // Handle the response from the backend
             console.log("Data Frame:", response.data);
             setDropNa(response.data)
             setDropNaVal(true)
+            setSelectedAction("");
             // Update the state with the received groups if necessary
         })
         .catch(error => {
@@ -245,7 +307,7 @@ const UploadFile = () => {
     };
 
     return (
-        <>
+        <div className='container'>
         {data.name !== "" && (
             <>
             <Nav>
@@ -258,7 +320,7 @@ const UploadFile = () => {
                 <Scroll>     
                 <AiIcons.AiOutlineClose onClick={showTabView} style={{ position: "absolute", top: 0, right: 0 }}/>
                 {data.map((fileData, index) => (
-                    <div key={index} className={`chart-icon ${selectedFiles === index ? "active" : ""}`}>
+                    <div key={index} className={`tab-icon ${selectedFiles === index ? "active" : ""}`}>
                     <input
                         type="radio"
                         checked={selectedFiles === index}
@@ -274,7 +336,7 @@ const UploadFile = () => {
             </>     
         )}
         
-        <div className='container'>
+        
         
         {data.name === "" && (
         <div className={isFileUploadHidden ? 'hidden' : 'file-upload'}>
@@ -288,7 +350,7 @@ const UploadFile = () => {
         )}
 
           {data.name !== "" && data.length > 1 && (
-                <div className = 'box-chart'>
+            <>
                     Select join type:
                     <select value={joinType} onChange={handleJoinTypeChange}>
                         <option value=""></option>
@@ -306,7 +368,7 @@ const UploadFile = () => {
                     
 
                     <button onClick={handleJoinTable}>Join Table</button>
-                </div>
+                </>
             )}
 
             <div>
@@ -325,51 +387,66 @@ const UploadFile = () => {
                 </> 
             )}
             </div>
-
-          {isFileUploadHidden && isTableReady ? (
-            <React.Fragment>
-                <ReactTable
-                filterable
-                data={nuldata}
+        
+        <div className='custom-gap'>
+          {isFileUploadHidden && isTableReady && (
+            
+            <CustomTable
+                data={tabData}
                 columns={columns}
-                style={{
-                    height: "400px" // This will force the table body to overflow and scroll, since there is not enough room
-                }}
+                
+                defaultPageSize={10} // Set the default page size to 100 rows
+                showPagination={false}
+                getTrProps={() => ({ component: CustomTr })}
+                className="-striped -highlight pa3"
+                />
+            
+            )}
+        </div>
+        
+        <div className='custom-gap'>
+          {isFileUploadHidden && isTableReady && nuldata && nuldata.length > 0 &&(
+            <>
+                <CustomTable
+                data={nuldata}
+                columns={ColNul}
+                defaultPageSize={10} // Set the default page size to 100 rows
+                showPagination={false}
                 className="-striped -highlight pa3"
                 />
                 {nuldata && nuldata.length > 0 && (
-                <div>
-                    The dataframe has null values. Would you like to drop the NA values?
+                <>
+                    How would you like to drop the NA values?
                         <select value={selectedAction} onChange={handleDropNa}>
                             <option value=""></option>
                             <option value="drop">Drop NA</option>
                             <option value="next">next value</option>
                             <option value="prev">previous value</option>
-                            <option value="interp">linear interpolation</option>   
                         </select>
                         {DropNa && (
                             <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
                                 {JSON.stringify(DropNa)}
                             </div>
                         )}
-                </div>
+                </>
                 )}
-            </React.Fragment>
-            ) : isFileUploadHidden && (
-                <div className="center pa7 db row">
-                    <Loader size={40} display="block" />
-                </div>
+            </>
             )}
+            </div>
+        
+            
 
-            <button onClick={handleLoadTable}>{isLoading ? 'Loading...' : 'Load'}</button>
+            <button onClick={handleLoadTable} style={loadButtonStyles}>
+                {isLoading ? 'Loading...' : 'Load'}
+            </button>
 
-            {LoadData && isFileUploadHidden && (
-                <div style={{ fontStyle: 'italic', fontSize: '12px' }}>
+            {LoadData && isFileUploadHidden && isTableReady &&(
+                <div style={{ fontStyle: 'italic', fontSize: '12px', display: "block", justifyContent: 'center', marginLeft: '400px' }}>
                     Data has been loaded
                 </div>
             )}
         </div>
-        </> 
     );
 };
-export default UploadFile
+
+export {UploadFile}

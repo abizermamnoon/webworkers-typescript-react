@@ -24,6 +24,8 @@ body {
   flex-wrap: wrap;
   /* align-items: center; */
   width: 100%;
+  height: 100%;
+  background-color: ivory;
 }
 
 .file-upload {
@@ -140,4 +142,32 @@ body {
 .chart-icon.active {
   background-color: #2196f3;
   color: #fff;
+}
+
+.tab-icon {
+  cursor: pointer;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+  color: #333;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.tab-icon.active {
+  background-color: #2196f3;
+  color: #fff;
+}
+
+.custom-gap {
+  margin: 30px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  background-color: ivory;
+  width: 100%;
+  height: 100%;
 }
