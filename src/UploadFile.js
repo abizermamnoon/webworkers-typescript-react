@@ -335,9 +335,6 @@ const UploadFile = () => {
             </IconContext.Provider> 
             </>     
         )}
-        
-        
-        
         {data.name === "" && (
         <div className={isFileUploadHidden ? 'hidden' : 'file-upload'}>
             <input type="file" id="fileInput" ref={el} onChange={handleChange} multiple/>
@@ -348,6 +345,7 @@ const UploadFile = () => {
             <hr />
         </div>
         )}
+        
 
           {data.name !== "" && data.length > 1 && (
             <>
