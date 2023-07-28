@@ -2,12 +2,13 @@
 **<u>React Frontend</u>**
 How to Start?
 
-Latest version of web app is on the branch heatmap
-Fork branch heatmap
-Npm install 
-npm start - localhost:3030
+Latest version of web app is on the branch heatmap :
 
-Also start flask backend in separate repository
+* Fork branch heatmap
+* Npm install 
+* npm start - localhost:3030
+
+Also start flask backend in separate repository. Latest version of flask backend is in the heatmap branch
 
 ## **<u>Upload File</u>**
 1) Choose a file or multiple files:
